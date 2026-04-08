@@ -11,7 +11,8 @@
     readyOrders: [],
     deliveryOrders: [],
     tomorrowOrders: [],
-    tomorrowPlanDate: ''
+    tomorrowPlanDate: '',
+    sessionUserId: ''
   };
   var APP_USER_STORAGE_KEY = 'airtis_sales_user_id';
 
@@ -19,21 +20,26 @@
     try {
       bindEvents();
       setTodayAsDefault_();
-      restoreUserSession_();
-
-      if (!appState.currentUser.authorized) {
-        setStatusText_('Akses belum aktif');
-        renderUnauthorizedState_();
-        return;
-      }
-
-      setStatusText_('Memuat data aplikasi...');
-      loadAllData_();
+      initializeApp_();
     } catch (error) {
       setStatusText_('Gagal inisialisasi');
       renderResult_('Gagal inisialisasi halaman: ' + error.message, true);
     }
   });
+
+  function initializeApp_() {
+    var savedUserId = loadSavedUserSession_();
+
+    applyCurrentUserAccess_();
+
+    if (!savedUserId) {
+      setStatusText_('Akses belum aktif');
+      renderUnauthorizedState_();
+      return;
+    }
+
+    restoreUserSession_(savedUserId);
+  }
 
   function bindEvents() {
     document.querySelectorAll('.tab-btn').forEach(function(button) {
@@ -1009,15 +1015,7 @@
     setText_('authNoticeText', message);
   }
 
-  function restoreUserSession_() {
-    var savedUserId = loadSavedUserSession_();
-
-    applyCurrentUserAccess_();
-
-    if (!savedUserId) {
-      return;
-    }
-
+  function restoreUserSession_(savedUserId) {
     setFieldValue_('login_user_id', savedUserId);
     setStatusText_('Memulihkan sesi login...');
 
@@ -1055,15 +1053,37 @@
   }
 
   function saveUserSession_(userId) {
-    localStorage.setItem(APP_USER_STORAGE_KEY, String(userId || '').trim().toUpperCase());
+    var normalizedUserId = String(userId || '').trim().toUpperCase();
+
+    appState.sessionUserId = normalizedUserId;
+
+    try {
+      localStorage.setItem(APP_USER_STORAGE_KEY, normalizedUserId);
+    } catch (error) {
+      // Browser mobile tertentu kadang membatasi storage untuk halaman Apps Script.
+    }
   }
 
   function loadSavedUserSession_() {
-    return String(localStorage.getItem(APP_USER_STORAGE_KEY) || '').trim().toUpperCase();
+    var userId = '';
+
+    try {
+      userId = String(localStorage.getItem(APP_USER_STORAGE_KEY) || '').trim().toUpperCase();
+    } catch (error) {
+      userId = '';
+    }
+
+    return userId || String(appState.sessionUserId || '').trim().toUpperCase();
   }
 
   function clearSavedUserSession_() {
-    localStorage.removeItem(APP_USER_STORAGE_KEY);
+    appState.sessionUserId = '';
+
+    try {
+      localStorage.removeItem(APP_USER_STORAGE_KEY);
+    } catch (error) {
+      // Abaikan jika browser tidak mengizinkan storage.
+    }
   }
 
   function resetForm_() {
