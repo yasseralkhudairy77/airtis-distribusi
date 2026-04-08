@@ -634,8 +634,8 @@
     var subtotal = qty * harga;
     var total = subtotal - diskon;
 
-    setFieldValue_('subtotal', subtotal > 0 ? subtotal : 0);
-    setFieldValue_('total', total > 0 ? total : 0);
+    setFieldValue_('subtotal', formatCurrencyInput_(subtotal > 0 ? subtotal : 0));
+    setFieldValue_('total', formatCurrencyInput_(total > 0 ? total : 0));
   }
 
   function calculateAdminTotals_() {
@@ -645,8 +645,8 @@
     var subtotal = qty * harga;
     var total = subtotal - diskon;
 
-    setFieldValue_('admin_subtotal', subtotal > 0 ? subtotal : 0);
-    setFieldValue_('admin_total', total > 0 ? total : 0);
+    setFieldValue_('admin_subtotal', formatCurrencyInput_(subtotal > 0 ? subtotal : 0));
+    setFieldValue_('admin_total', formatCurrencyInput_(total > 0 ? total : 0));
   }
 
   function submitForm_(event) {
@@ -893,8 +893,8 @@
       qty: getFieldValue_('qty'),
       harga: getFieldValue_('harga'),
       diskon: getFieldValue_('diskon') || 0,
-      subtotal: getFieldValue_('subtotal') || 0,
-      total: getFieldValue_('total') || 0,
+      subtotal: parseCurrencyInput_(getFieldValue_('subtotal')),
+      total: parseCurrencyInput_(getFieldValue_('total')),
       term_pembayaran: getFieldValue_('term_pembayaran'),
       tanggal_kirim_rencana: getFieldValue_('tanggal_kirim_rencana'),
       catatan: getFieldValue_('catatan')
@@ -932,8 +932,8 @@
       qty: getFieldValue_('admin_qty'),
       harga: getFieldValue_('admin_harga'),
       diskon: getFieldValue_('admin_diskon') || 0,
-      subtotal: getFieldValue_('admin_subtotal') || 0,
-      total: getFieldValue_('admin_total') || 0,
+      subtotal: parseCurrencyInput_(getFieldValue_('admin_subtotal')),
+      total: parseCurrencyInput_(getFieldValue_('admin_total')),
       term_pembayaran: getFieldValue_('admin_term_pembayaran'),
       tanggal_kirim_rencana: getFieldValue_('admin_tanggal_kirim_rencana'),
       catatan: getFieldValue_('admin_catatan')
@@ -1096,8 +1096,8 @@
     setTodayAsDefault_();
     clearCustomerInfo_();
     setFieldValue_('sales_nama', '');
-    setFieldValue_('subtotal', 0);
-    setFieldValue_('total', 0);
+    setFieldValue_('subtotal', formatCurrencyInput_(0));
+    setFieldValue_('total', formatCurrencyInput_(0));
     renderResult_('Belum ada order yang dikirim.', false);
     document.querySelector('input[name="jenis_customer"][value="Lama"]').checked = true;
     handleJenisCustomerChange_();
@@ -1110,8 +1110,8 @@
     document.getElementById('agentOrderForm').reset();
     document.querySelector('input[name="admin_jenis_customer"][value="Lama"]').checked = true;
     clearAdminCustomerInfo_();
-    setFieldValue_('admin_subtotal', 0);
-    setFieldValue_('admin_total', 0);
+    setFieldValue_('admin_subtotal', formatCurrencyInput_(0));
+    setFieldValue_('admin_total', formatCurrencyInput_(0));
     handleAdminJenisCustomerChange_();
     handleAdminProductChange_();
     setFieldValue_('admin_tanggal_kirim_rencana', getFieldValue_('tanggal_kirim_rencana'));
@@ -1135,11 +1135,11 @@
     ].join('-');
 
     setFieldValue_('tanggal_kirim_rencana', iso);
-    setFieldValue_('subtotal', 0);
-    setFieldValue_('total', 0);
+    setFieldValue_('subtotal', formatCurrencyInput_(0));
+    setFieldValue_('total', formatCurrencyInput_(0));
     setFieldValue_('admin_tanggal_kirim_rencana', iso);
-    setFieldValue_('admin_subtotal', 0);
-    setFieldValue_('admin_total', 0);
+    setFieldValue_('admin_subtotal', formatCurrencyInput_(0));
+    setFieldValue_('admin_total', formatCurrencyInput_(0));
     updateSalesNewCustomerRequirements_(getJenisCustomer_() === 'Baru');
   }
 
@@ -1294,6 +1294,15 @@
   function formatNumber_(value) {
     var number = Number(value || 0);
     return number.toLocaleString('id-ID');
+  }
+
+  function formatCurrencyInput_(value) {
+    return 'Rp ' + formatNumber_(value || 0);
+  }
+
+  function parseCurrencyInput_(value) {
+    var normalized = String(value || '').replace(/[^0-9-]/g, '');
+    return Number(normalized || 0);
   }
 
   function formatCustomerMoney_(value) {
