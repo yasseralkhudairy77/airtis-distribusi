@@ -13,12 +13,13 @@
     tomorrowOrders: [],
     tomorrowPlanDate: ''
   };
+  var APP_USER_STORAGE_KEY = 'airtis_sales_user_id';
 
   document.addEventListener('DOMContentLoaded', function() {
     try {
       bindEvents();
-      applyCurrentUserAccess_();
       setTodayAsDefault_();
+      restoreUserSession_();
 
       if (!appState.currentUser.authorized) {
         setStatusText_('Akses belum aktif');
@@ -52,6 +53,7 @@
     document.getElementById('diskon').addEventListener('input', calculateTotals_);
     document.getElementById('resetBtn').addEventListener('click', resetForm_);
     document.getElementById('salesOrderForm').addEventListener('submit', submitForm_);
+    document.getElementById('loginForm').addEventListener('submit', submitLoginForm_);
     document.getElementById('refreshApproverBtn').addEventListener('click', loadApproverData_);
     document.getElementById('refreshAdminBtn').addEventListener('click', loadAdminData_);
     document.getElementById('admin_customer_id').addEventListener('change', handleAdminCustomerChange_);
@@ -102,6 +104,8 @@
   }
 
   function loadSalesData_(callback) {
+    if (!ensureAuthorizedSession_()) return;
+
     google.script.run
       .withSuccessHandler(function(data) {
         try {
@@ -129,10 +133,12 @@
         setStatusText_('Gagal memuat data sales');
         renderResult_('Gagal memuat data sales: ' + error.message, true);
       })
-      .getSalesOrderFormData();
+      .getSalesOrderFormData(appState.currentUser.user_id);
   }
 
   function loadApproverData_(callback) {
+    if (!ensureAuthorizedSession_()) return;
+
     google.script.run
       .withSuccessHandler(function(data) {
         try {
@@ -155,10 +161,12 @@
         setStatusText_('Gagal memuat data approval');
         renderResult_('Gagal memuat data approval: ' + error.message, true);
       })
-      .getApproverDashboardData();
+      .getApproverDashboardData(appState.currentUser.user_id);
   }
 
   function loadAdminData_(callback) {
+    if (!ensureAuthorizedSession_()) return;
+
     google.script.run
       .withSuccessHandler(function(data) {
         try {
@@ -195,7 +203,7 @@
         setStatusText_(message);
         renderResult_(message, true);
       })
-      .getAdminDashboardData();
+      .getAdminDashboardData(appState.currentUser.user_id);
   }
 
   function activateTab_(tabName) {
@@ -655,7 +663,7 @@
         setStatusText_('Order gagal diproses');
         renderResult_('Gagal submit order: ' + error.message, true);
       })
-      .submitSalesOrderFromForm(payload);
+      .submitSalesOrderFromForm(appState.currentUser.user_id, payload);
   }
 
   function handleApproveOrder(noSo) {
@@ -677,7 +685,7 @@
         setStatusText_('Approval gagal');
         renderResult_('Gagal approve order: ' + error.message, true);
       })
-      .approveOrderFromDashboard({
+      .approveOrderFromDashboard(appState.currentUser.user_id, {
         no_so: noSo,
         catatan_approval: catatan
       });
@@ -702,7 +710,7 @@
         setStatusText_('Reject gagal');
         renderResult_('Gagal reject order: ' + error.message, true);
       })
-      .rejectOrderFromDashboard({
+      .rejectOrderFromDashboard(appState.currentUser.user_id, {
         no_so: noSo,
         catatan_approval: catatan
       });
@@ -720,7 +728,7 @@
         setStatusText_('Gagal membuat surat jalan');
         renderResult_('Gagal membuat surat jalan: ' + error.message, true);
       })
-      .createSuratJalanFromDashboard({
+      .createSuratJalanFromDashboard(appState.currentUser.user_id, {
         no_so: noSo,
         driver: '',
         armada: '',
@@ -740,7 +748,7 @@
         setStatusText_('Gagal update status');
         renderResult_('Gagal update status kirim: ' + error.message, true);
       })
-      .markOrderDeliveredFromDashboard({
+      .markOrderDeliveredFromDashboard(appState.currentUser.user_id, {
         no_so: noSo,
         catatan_kirim: 'Diupdate dari webapp admin'
       });
@@ -758,7 +766,7 @@
         setStatusText_('Gagal menyelesaikan order');
         renderResult_('Gagal menyelesaikan order: ' + error.message, true);
       })
-      .completeOrderFromDashboard({
+      .completeOrderFromDashboard(appState.currentUser.user_id, {
         no_so: noSo,
         catatan_kirim: 'Order selesai dari webapp admin'
       });
@@ -775,7 +783,7 @@
         setStatusText_('Gagal menyiapkan print');
         renderResult_('Gagal menyiapkan print surat jalan: ' + error.message, true);
       })
-      .getSuratJalanPrintDataFromDashboard(noSo);
+      .getSuratJalanPrintDataFromDashboard(appState.currentUser.user_id, noSo);
   }
 
   function submitAgentOrderForm_(event) {
@@ -803,7 +811,51 @@
         setStatusText_('Pengiriman agen gagal diproses');
         renderResult_('Gagal submit pengiriman agen: ' + error.message, true);
       })
-      .submitAgentOrderFromAdmin(payload);
+      .submitAgentOrderFromAdmin(appState.currentUser.user_id, payload);
+  }
+
+  function submitLoginForm_(event) {
+    var userId;
+    var loginBtn = document.getElementById('loginBtn');
+
+    event.preventDefault();
+    userId = String(getFieldValue_('login_user_id') || '').trim().toUpperCase();
+
+    if (!userId) {
+      setStatusText_('Masukkan User ID terlebih dahulu');
+      renderUnauthorizedMessage_('User ID wajib diisi untuk masuk ke webapp.');
+      return;
+    }
+
+    loginBtn.disabled = true;
+    setStatusText_('Memeriksa User ID...');
+
+    google.script.run
+      .withSuccessHandler(function(profile) {
+        loginBtn.disabled = false;
+        appState.currentUser = profile || {};
+
+        if (!appState.currentUser.authorized) {
+          clearSavedUserSession_();
+          setStatusText_('Akses belum aktif');
+          renderUnauthorizedMessage_('User ID ' + userId + ' belum terdaftar aktif di MASTER_USER.');
+          renderUnauthorizedState_();
+          return;
+        }
+
+        saveUserSession_(appState.currentUser.user_id);
+        applyCurrentUserAccess_();
+        setStatusText_('User berhasil masuk');
+        renderResult_('Siap digunakan oleh ' + (appState.currentUser.nama_user || appState.currentUser.user_id), false);
+        loadAllData_();
+      })
+      .withFailureHandler(function(error) {
+        loginBtn.disabled = false;
+        clearSavedUserSession_();
+        setStatusText_('Gagal login');
+        renderUnauthorizedMessage_('Gagal login: ' + error.message);
+      })
+      .getUserProfileByUserId(userId);
   }
 
   function collectFormData_() {
@@ -912,13 +964,14 @@
   function applyCurrentUserAccess_() {
     var currentUser = appState.currentUser || {};
     var roleKey = currentUser.role_key || '';
-    var summary = 'Email: ' + (currentUser.email || '-');
+    var summary = 'Belum login';
 
     if (currentUser.authorized) {
-      summary = (currentUser.nama_user || currentUser.email || '-') + ' | ' + (currentUser.role || '-');
+      summary = (currentUser.nama_user || currentUser.user_id || '-') + ' | ' + (currentUser.role || '-') + ' | ' + (currentUser.user_id || '-');
     }
 
     setText_('userSummary', summary);
+    document.getElementById('authNotice').classList.toggle('hidden', !!currentUser.authorized);
 
     document.querySelectorAll('.tab-btn').forEach(function(button) {
       var allowed = button.dataset.role === roleKey;
@@ -937,10 +990,11 @@
   }
 
   function renderUnauthorizedState_() {
+    applyCurrentUserAccess_();
     document.getElementById('authNotice').classList.remove('hidden');
-    setText_(
-      'authNoticeText',
-      'Email login ' + (appState.currentUser.email || '-') + ' belum terdaftar aktif di MASTER_USER. Tambahkan user dulu agar webapp bisa dipakai.'
+    setFieldValue_('login_user_id', appState.currentUser && appState.currentUser.user_id ? appState.currentUser.user_id : loadSavedUserSession_());
+    renderUnauthorizedMessage_(
+      'Masukkan User ID yang terdaftar aktif di MASTER_USER untuk memakai webapp.'
     );
     document.querySelectorAll('.tab-btn').forEach(function(button) {
       button.classList.add('hidden');
@@ -949,6 +1003,67 @@
       panel.classList.remove('active');
       panel.classList.add('hidden');
     });
+  }
+
+  function renderUnauthorizedMessage_(message) {
+    setText_('authNoticeText', message);
+  }
+
+  function restoreUserSession_() {
+    var savedUserId = loadSavedUserSession_();
+
+    applyCurrentUserAccess_();
+
+    if (!savedUserId) {
+      return;
+    }
+
+    setFieldValue_('login_user_id', savedUserId);
+    setStatusText_('Memulihkan sesi login...');
+
+    google.script.run
+      .withSuccessHandler(function(profile) {
+        appState.currentUser = profile || {};
+
+        if (!appState.currentUser.authorized) {
+          clearSavedUserSession_();
+          setStatusText_('Akses belum aktif');
+          renderUnauthorizedState_();
+          return;
+        }
+
+        applyCurrentUserAccess_();
+        setStatusText_('Sesi login ditemukan');
+        loadAllData_();
+      })
+      .withFailureHandler(function() {
+        clearSavedUserSession_();
+        setStatusText_('Akses belum aktif');
+        renderUnauthorizedState_();
+      })
+      .getUserProfileByUserId(savedUserId);
+  }
+
+  function ensureAuthorizedSession_() {
+    if (appState.currentUser && appState.currentUser.authorized && appState.currentUser.user_id) {
+      return true;
+    }
+
+    setStatusText_('Silakan login ulang');
+    renderUnauthorizedState_();
+    return false;
+  }
+
+  function saveUserSession_(userId) {
+    localStorage.setItem(APP_USER_STORAGE_KEY, String(userId || '').trim().toUpperCase());
+  }
+
+  function loadSavedUserSession_() {
+    return String(localStorage.getItem(APP_USER_STORAGE_KEY) || '').trim().toUpperCase();
+  }
+
+  function clearSavedUserSession_() {
+    localStorage.removeItem(APP_USER_STORAGE_KEY);
   }
 
   function resetForm_() {

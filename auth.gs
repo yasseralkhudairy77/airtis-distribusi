@@ -1,9 +1,9 @@
-function getCurrentUserProfile() {
-  var user = getCurrentUserRecord_();
+function getCurrentUserProfile(userId) {
+  var user = getCurrentUserRecord_(userId);
 
   if (!user) {
     return {
-      email: getCurrentUserEmail_(),
+      email: '',
       user_id: '',
       nama_user: '',
       role: '',
@@ -14,7 +14,7 @@ function getCurrentUserProfile() {
   }
 
   return {
-    email: user.email || getCurrentUserEmail_(),
+    email: user.email || '',
     user_id: user.user_id || '',
     nama_user: user.nama_user || '',
     role: user.role || '',
@@ -24,18 +24,22 @@ function getCurrentUserProfile() {
   };
 }
 
-function requireAuthorizedUser_() {
-  var user = getCurrentUserRecord_();
+function getUserProfileByUserId(userId) {
+  return getCurrentUserProfile(userId);
+}
+
+function requireAuthorizedUser_(userId) {
+  var user = getCurrentUserRecord_(userId);
 
   if (!user) {
-    throw new Error('Akses ditolak. Email login Anda belum terdaftar atau user tidak aktif di MASTER_USER.');
+    throw new Error('Akses ditolak. User ID belum terdaftar atau status user tidak aktif di MASTER_USER.');
   }
 
   return user;
 }
 
-function requireCurrentUserRole_(allowedRoles) {
-  var user = requireAuthorizedUser_();
+function requireCurrentUserRole_(allowedRoles, userId) {
+  var user = requireAuthorizedUser_(userId);
   var roleKeys = (allowedRoles || []).map(function(role) {
     return normalizeRoleKey_(role);
   });
@@ -48,21 +52,17 @@ function requireCurrentUserRole_(allowedRoles) {
   return user;
 }
 
-function getCurrentUserRecord_() {
-  var email = normalizeText_(getCurrentUserEmail_());
+function getCurrentUserRecord_(userId) {
+  var normalizedUserId = normalizeText_(userId);
 
-  if (!email) {
+  if (!normalizedUserId) {
     return null;
   }
 
   return getSheetData_(APP_CONFIG.SHEETS.MASTER_USER).find(function(user) {
-    return normalizeText_(user.email) === email &&
+    return normalizeText_(user.user_id) === normalizedUserId &&
       normalizeText_(user.status_aktif) === 'aktif';
   }) || null;
-}
-
-function getCurrentUserEmail_() {
-  return Session.getActiveUser().getEmail() || '';
 }
 
 function normalizeRoleKey_(role) {

@@ -49,8 +49,8 @@ function toClientValue_(value) {
   return value;
 }
 
-function getSalesOrderFormData() {
-  var currentUser = requireCurrentUserRole_(['Sales']);
+function getSalesOrderFormData(userId) {
+  var currentUser = requireCurrentUserRole_(['Sales'], userId);
 
   return toClientValue_({
     customers: getActiveCustomers(),
@@ -62,8 +62,8 @@ function getSalesOrderFormData() {
   });
 }
 
-function getApproverDashboardData() {
-  var currentUser = requireCurrentUserRole_(['Approver']);
+function getApproverDashboardData(userId) {
+  var currentUser = requireCurrentUserRole_(['Approver'], userId);
   var approvals = getSheetData_(APP_CONFIG.SHEETS.APPROVAL_ORDER).filter(function(row) {
     return normalizeText_(row.status_approval) === 'menunggu';
   });
@@ -97,8 +97,8 @@ function getApproverDashboardData() {
   });
 }
 
-function getAdminDashboardData() {
-  var currentUser = requireCurrentUserRole_(['CS/Admin']);
+function getAdminDashboardData(userId) {
+  var currentUser = requireCurrentUserRole_(['CS/Admin'], userId);
   var salesOrders = getSheetData_(APP_CONFIG.SHEETS.SALES_ORDER);
   var deliveryOrders = getSheetData_(APP_CONFIG.SHEETS.SURAT_JALAN);
   var suratJalanByNoSo = {};
@@ -146,8 +146,8 @@ function shouldIncludeTomorrowOrder_(row, tomorrowDate) {
   return ['draft', 'menunggu persetujuan', 'disetujui', 'siap kirim'].indexOf(statusOrder) !== -1;
 }
 
-function submitSalesOrderFromForm(formData) {
-  var currentUser = requireCurrentUserRole_(['Sales']);
+function submitSalesOrderFromForm(userId, formData) {
+  var currentUser = requireCurrentUserRole_(['Sales'], userId);
   var payload = {
     sales_id: currentUser.user_id,
     sales_nama: currentUser.nama_user,
@@ -174,18 +174,18 @@ function submitSalesOrderFromForm(formData) {
   return submitSalesOrder(payload);
 }
 
-function approveOrderFromDashboard(formData) {
-  var currentUser = requireCurrentUserRole_(['Approver']);
+function approveOrderFromDashboard(userId, formData) {
+  var currentUser = requireCurrentUserRole_(['Approver'], userId);
   return approveOrder(formData.no_so, currentUser.user_id, formData.catatan_approval || '');
 }
 
-function rejectOrderFromDashboard(formData) {
-  var currentUser = requireCurrentUserRole_(['Approver']);
+function rejectOrderFromDashboard(userId, formData) {
+  var currentUser = requireCurrentUserRole_(['Approver'], userId);
   return rejectOrder(formData.no_so, currentUser.user_id, formData.catatan_approval || '');
 }
 
-function createSuratJalanFromDashboard(formData) {
-  requireCurrentUserRole_(['CS/Admin']);
+function createSuratJalanFromDashboard(userId, formData) {
+  requireCurrentUserRole_(['CS/Admin'], userId);
 
   return createSuratJalan(formData.no_so, {
     driver: formData.driver || '',
@@ -194,18 +194,18 @@ function createSuratJalanFromDashboard(formData) {
   });
 }
 
-function markOrderDeliveredFromDashboard(formData) {
-  var currentUser = requireCurrentUserRole_(['CS/Admin']);
+function markOrderDeliveredFromDashboard(userId, formData) {
+  var currentUser = requireCurrentUserRole_(['CS/Admin'], userId);
   return markOrderDelivered(formData.no_so, currentUser.user_id, formData.catatan_kirim || '');
 }
 
-function completeOrderFromDashboard(formData) {
-  var currentUser = requireCurrentUserRole_(['CS/Admin']);
+function completeOrderFromDashboard(userId, formData) {
+  var currentUser = requireCurrentUserRole_(['CS/Admin'], userId);
   return completeOrder(formData.no_so, currentUser.user_id, formData.catatan_kirim || '');
 }
 
-function submitAgentOrderFromAdmin(formData) {
-  var currentUser = requireCurrentUserRole_(['CS/Admin']);
+function submitAgentOrderFromAdmin(userId, formData) {
+  var currentUser = requireCurrentUserRole_(['CS/Admin'], userId);
   var catatan = formData.catatan || '';
   var catatanGabungan = '[AGEN/CS] Input oleh ' + currentUser.nama_user;
 
@@ -237,8 +237,8 @@ function submitAgentOrderFromAdmin(formData) {
   });
 }
 
-function getSuratJalanPrintDataFromDashboard(noSo) {
-  requireCurrentUserRole_(['CS/Admin']);
+function getSuratJalanPrintDataFromDashboard(userId, noSo) {
+  requireCurrentUserRole_(['CS/Admin'], userId);
   return toClientValue_(getSuratJalanPrintData(noSo));
 }
 
@@ -260,9 +260,9 @@ function getBrandLogoDataUrl_() {
 }
 
 function testGetApproverDashboardData() {
-  console.log(JSON.stringify(getApproverDashboardData()));
+  console.log(JSON.stringify(getApproverDashboardData('U003')));
 }
 
 function testGetAdminDashboardData() {
-  console.log(JSON.stringify(getAdminDashboardData()));
+  console.log(JSON.stringify(getAdminDashboardData('U020')));
 }

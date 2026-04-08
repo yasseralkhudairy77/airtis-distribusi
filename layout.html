@@ -39,6 +39,15 @@
         <section class="auth-notice hidden" id="authNotice">
           <h2>Akses Belum Aktif</h2>
           <p id="authNoticeText">Email login Anda belum memiliki otorisasi di webapp ini.</p>
+          <form id="loginForm" class="login-form">
+            <label class="field">
+              <span>User ID</span>
+              <input id="login_user_id" type="text" placeholder="Contoh: U010" autocomplete="username" />
+            </label>
+            <div class="action-row auth-action-row">
+              <button type="submit" class="primary-btn" id="loginBtn">Masuk</button>
+            </div>
+          </form>
         </section>
 
         <section class="tab-panel active" id="tab-sales" data-role="sales">
