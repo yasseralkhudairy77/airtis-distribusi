@@ -59,6 +59,7 @@
     document.getElementById('resetBtn').addEventListener('click', resetForm_);
     document.getElementById('salesOrderForm').addEventListener('submit', submitForm_);
     document.getElementById('loginForm').addEventListener('submit', submitLoginForm_);
+    document.getElementById('logoutBtn').addEventListener('click', handleLogout_);
     document.getElementById('refreshApproverBtn').addEventListener('click', loadApproverData_);
     document.getElementById('refreshAdminBtn').addEventListener('click', loadAdminData_);
     document.getElementById('admin_customer_id').addEventListener('change', handleAdminCustomerChange_);
@@ -119,7 +120,7 @@
           appState.customers = Array.isArray(payload.customers) ? payload.customers : [];
           appState.users = Array.isArray(payload.users) ? payload.users : [];
           appState.products = Array.isArray(payload.products) ? payload.products : [];
-          appState.currentUser = payload.currentUser || appState.currentUser;
+          syncCurrentUser_(payload.currentUser);
 
           renderSalesOptions_();
           renderCustomerOptions_();
@@ -151,7 +152,7 @@
 
           appState.approvals = Array.isArray(payload.approvals) ? payload.approvals : [];
           appState.approvers = Array.isArray(payload.approvers) ? payload.approvers : [];
-          appState.currentUser = payload.currentUser || appState.currentUser;
+          syncCurrentUser_(payload.currentUser);
 
           renderApproverOptions_();
           renderApproverTable_();
@@ -183,7 +184,7 @@
           appState.tomorrowPlanDate = String(payload.tomorrowPlanDate || '');
           appState.customers = Array.isArray(payload.customers) ? payload.customers : appState.customers;
           appState.products = Array.isArray(payload.products) ? payload.products : appState.products;
-          appState.currentUser = payload.currentUser || appState.currentUser;
+          syncCurrentUser_(payload.currentUser);
 
           renderAdminCustomerOptions_();
           renderAdminProductOptions_();
@@ -847,7 +848,7 @@
     google.script.run
       .withSuccessHandler(function(profile) {
         loginBtn.disabled = false;
-        appState.currentUser = profile || {};
+        syncCurrentUser_(profile);
 
         if (!appState.currentUser.authorized) {
           clearSavedUserSession_();
@@ -995,6 +996,14 @@
     resultContent.className = isWarning ? 'result-warn' : 'result-ok';
   }
 
+  function handleLogout_() {
+    clearSavedUserSession_();
+    appState.currentUser = {};
+    setStatusText_('Silakan login');
+    renderUnauthorizedState_();
+    renderResult_('Anda sudah logout dari webapp.', false);
+  }
+
   function setStatusText_(message) {
     setText_('statusText', message);
   }
@@ -1009,6 +1018,7 @@
     }
 
     setText_('userSummary', summary);
+    document.getElementById('logoutBtn').classList.toggle('hidden', !currentUser.authorized);
     document.getElementById('authNotice').classList.toggle('hidden', !!currentUser.authorized);
 
     document.querySelectorAll('.tab-btn').forEach(function(button) {
@@ -1089,6 +1099,21 @@
     } catch (error) {
       // Abaikan jika browser tidak mengizinkan storage.
     }
+  }
+
+  function syncCurrentUser_(nextUser) {
+    var currentUser = appState.currentUser || {};
+    var incomingUser = nextUser || {};
+
+    appState.currentUser = {
+      email: incomingUser.email || currentUser.email || '',
+      user_id: incomingUser.user_id || currentUser.user_id || '',
+      nama_user: incomingUser.nama_user || currentUser.nama_user || '',
+      role: incomingUser.role || currentUser.role || '',
+      role_key: incomingUser.role_key || currentUser.role_key || '',
+      status_aktif: incomingUser.status_aktif || currentUser.status_aktif || '',
+      authorized: typeof incomingUser.authorized === 'boolean' ? incomingUser.authorized : !!currentUser.authorized
+    };
   }
 
   function resetForm_() {

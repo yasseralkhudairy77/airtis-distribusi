@@ -50,7 +50,8 @@ function toClientValue_(value) {
 }
 
 function getSalesOrderFormData(userId) {
-  var currentUser = requireCurrentUserRole_(['Sales'], userId);
+  requireCurrentUserRole_(['Sales'], userId);
+  var currentUser = getCurrentUserProfile(userId);
 
   return toClientValue_({
     customers: getActiveCustomers(),
@@ -63,7 +64,8 @@ function getSalesOrderFormData(userId) {
 }
 
 function getApproverDashboardData(userId) {
-  var currentUser = requireCurrentUserRole_(['Approver'], userId);
+  requireCurrentUserRole_(['Approver'], userId);
+  var currentUser = getCurrentUserProfile(userId);
   var approvals = getSheetData_(APP_CONFIG.SHEETS.APPROVAL_ORDER).filter(function(row) {
     return normalizeText_(row.status_approval) === 'menunggu';
   });
@@ -98,7 +100,8 @@ function getApproverDashboardData(userId) {
 }
 
 function getAdminDashboardData(userId) {
-  var currentUser = requireCurrentUserRole_(['CS/Admin'], userId);
+  requireCurrentUserRole_(['CS/Admin'], userId);
+  var currentUser = getCurrentUserProfile(userId);
   var salesOrders = getSheetData_(APP_CONFIG.SHEETS.SALES_ORDER);
   var deliveryOrders = getSheetData_(APP_CONFIG.SHEETS.SURAT_JALAN);
   var suratJalanByNoSo = {};
