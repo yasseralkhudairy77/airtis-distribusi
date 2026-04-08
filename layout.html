@@ -15,10 +15,10 @@
               alt="Logo ATS"
             />
             <div>
-              <p class="eyebrow">MVP Operasional</p>
-              <h1>Sales Management</h1>
+              <p class="eyebrow">Operasional</p>
+              <h1>Sales Management System</h1>
               <p class="lead">
-                Sales input order, approver memutuskan pengecualian, dan CS/Admin memproses surat jalan dalam satu webapp.
+                PT ABUYAMAS TIRTA SEJAHTERA
               </p>
             </div>
           </div>
@@ -30,13 +30,13 @@
           </aside>
         </header>
 
-        <nav class="app-tabs">
+        <nav class="app-tabs hidden">
           <button type="button" class="tab-btn active" data-tab="sales" data-role="sales">Sales Order</button>
           <button type="button" class="tab-btn" data-tab="approver" data-role="approver">Approver</button>
           <button type="button" class="tab-btn" data-tab="admin" data-role="cs_admin">CS/Admin</button>
         </nav>
 
-        <section class="auth-notice hidden" id="authNotice">
+        <section class="auth-notice" id="authNotice">
           <h2>Akses Belum Aktif</h2>
           <p id="authNoticeText">Email login Anda belum memiliki otorisasi di webapp ini.</p>
           <form id="loginForm" class="login-form">
@@ -50,7 +50,7 @@
           </form>
         </section>
 
-        <section class="tab-panel active" id="tab-sales" data-role="sales">
+        <section class="tab-panel hidden" id="tab-sales" data-role="sales">
           <form id="salesOrderForm" class="order-form">
             <section class="form-card">
               <h2>Info Sales</h2>
@@ -205,7 +205,7 @@
           </form>
         </section>
 
-        <section class="tab-panel" id="tab-approver" data-role="approver">
+        <section class="tab-panel hidden" id="tab-approver" data-role="approver">
           <section class="form-card">
             <div class="panel-header">
               <div>
@@ -244,7 +244,7 @@
           </section>
         </section>
 
-        <section class="tab-panel" id="tab-admin" data-role="cs_admin">
+        <section class="tab-panel hidden" id="tab-admin" data-role="cs_admin">
           <section class="form-card">
             <div class="panel-header">
               <div>
