@@ -31,14 +31,13 @@
     var savedUserId = loadSavedUserSession_();
 
     applyCurrentUserAccess_();
+    setStatusText_('Silakan login');
+    renderUnauthorizedState_();
 
-    if (!savedUserId) {
-      setStatusText_('Akses belum aktif');
-      renderUnauthorizedState_();
-      return;
+    if (savedUserId) {
+      setFieldValue_('login_user_id', savedUserId);
+      renderUnauthorizedMessage_('Masukkan User ID lalu klik Masuk untuk memakai webapp.');
     }
-
-    restoreUserSession_(savedUserId);
   }
 
   function bindEvents() {
@@ -1046,33 +1045,6 @@
 
   function renderUnauthorizedMessage_(message) {
     setText_('authNoticeText', message);
-  }
-
-  function restoreUserSession_(savedUserId) {
-    setFieldValue_('login_user_id', savedUserId);
-    setStatusText_('Memulihkan sesi login...');
-
-    google.script.run
-      .withSuccessHandler(function(profile) {
-        appState.currentUser = profile || {};
-
-        if (!appState.currentUser.authorized) {
-          clearSavedUserSession_();
-          setStatusText_('Akses belum aktif');
-          renderUnauthorizedState_();
-          return;
-        }
-
-        applyCurrentUserAccess_();
-        setStatusText_('Sesi login ditemukan');
-        loadAllData_();
-      })
-      .withFailureHandler(function() {
-        clearSavedUserSession_();
-        setStatusText_('Akses belum aktif');
-        renderUnauthorizedState_();
-      })
-      .getUserProfileByUserId(savedUserId);
   }
 
   function ensureAuthorizedSession_() {
