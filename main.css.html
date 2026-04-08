@@ -191,6 +191,11 @@
     padding: 20px;
   }
 
+  #tab-sales .form-card,
+  #tab-sales .result-card {
+    border-radius: 10px;
+  }
+
   .plan-card {
     background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
     border: 1px solid var(--sap-border);
@@ -270,6 +275,10 @@
     color: var(--sap-text);
   }
 
+  #tab-sales .field span {
+    font-size: 14px;
+  }
+
   .plan-output-field {
     margin-top: 16px;
   }
@@ -284,6 +293,21 @@
     border-radius: 4px;
     padding: 10px 12px;
     font: inherit;
+  }
+
+  #tab-sales input,
+  #tab-sales select,
+  #tab-sales textarea {
+    min-height: 46px;
+    font-size: 16px;
+  }
+
+  #tab-sales textarea {
+    min-height: 96px;
+  }
+
+  #tab-sales input[readonly] {
+    font-weight: 600;
   }
 
   textarea {
@@ -423,6 +447,12 @@
     color: var(--sap-muted);
   }
 
+  #tab-sales .customer-info {
+    gap: 10px;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #fafcff 0%, #f4f8fc 100%);
+  }
+
   .table-wrap {
     overflow-x: auto;
     border: 1px solid var(--sap-border);
@@ -551,6 +581,14 @@
     flex-wrap: wrap;
   }
 
+  .action-row-sticky {
+    position: sticky;
+    bottom: 0;
+    background: linear-gradient(180deg, rgba(245, 246, 247, 0) 0%, rgba(245, 246, 247, 0.96) 18%, rgba(245, 246, 247, 1) 100%);
+    padding-top: 12px;
+    margin-top: -4px;
+  }
+
   button {
     border-radius: 4px;
     padding: 10px 16px;
@@ -600,34 +638,61 @@
 
   @media (max-width: 760px) {
     .app-shell {
-      padding: 12px;
+      padding: 0;
     }
 
     .page-card {
-      padding: 16px;
+      padding: 14px;
+      border-radius: 0;
+      border-left: 0;
+      border-right: 0;
     }
 
     .page-header {
       flex-direction: column;
       align-items: stretch;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
     }
 
     .brand-block {
       align-items: flex-start;
+      gap: 12px;
     }
 
     .brand-logo {
-      width: 60px;
-      height: 60px;
+      width: 52px;
+      height: 52px;
     }
 
     .status-box {
       min-width: 0;
       width: 100%;
+      padding: 12px 14px;
+    }
+
+    .app-tabs {
+      gap: 6px;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .app-tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tab-btn {
+      flex: 0 0 auto;
+      min-height: 42px;
+      padding: 10px 14px;
     }
 
     .form-grid {
       grid-template-columns: 1fr;
+      gap: 12px;
     }
 
     .summary-grid {
@@ -640,6 +705,65 @@
 
     .panel-header {
       flex-direction: column;
+    }
+
+    .form-card,
+    .result-card,
+    .plan-card,
+    .modal-card {
+      padding: 14px;
+    }
+
+    #tab-sales .form-card {
+      padding: 16px 14px;
+    }
+
+    #tab-sales .radio-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    #tab-sales .radio-pill {
+      width: 100%;
+    }
+
+    #tab-sales .radio-pill span {
+      width: 100%;
+      justify-content: center;
+      min-height: 44px;
+      text-align: center;
+    }
+
+    #tab-sales .customer-info {
+      gap: 8px;
+      padding: 12px;
+      font-size: 13px;
+    }
+
+    #tab-sales .customer-info div {
+      display: grid;
+      gap: 2px;
+    }
+
+    #tab-sales .action-row-sticky {
+      position: sticky;
+      bottom: 0;
+      z-index: 20;
+      margin: 0 -14px -14px;
+      padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+      border-top: 1px solid var(--sap-border);
+      box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.06);
+    }
+
+    #tab-sales .action-row-sticky button {
+      min-height: 48px;
+      font-size: 15px;
+    }
+
+    #tab-sales .result-card {
+      margin-bottom: 4px;
     }
 
     .modal-backdrop {
