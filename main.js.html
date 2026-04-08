@@ -499,6 +499,7 @@
 
     document.getElementById('customerLamaSection').classList.toggle('hidden', !isLama);
     document.getElementById('customerBaruSection').classList.toggle('hidden', isLama);
+    updateSalesNewCustomerRequirements_(!isLama);
 
     if (isLama) {
       handleCustomerChange_();
@@ -653,7 +654,15 @@
     event.preventDefault();
 
     var payload = collectFormData_();
+    var validationMessage = validateSalesFormPayload_(payload);
     var submitBtn = document.getElementById('submitBtn');
+
+    if (validationMessage) {
+      setStatusText_('Form sales belum lengkap');
+      renderResult_(validationMessage, true);
+      return;
+    }
+
     submitBtn.disabled = true;
     setStatusText_('Mengirim order...');
 
@@ -941,6 +950,30 @@
     return formData;
   }
 
+  function validateSalesFormPayload_(payload) {
+    var requiredNewCustomerFields;
+
+    if (String(payload.jenis_customer || '') !== 'Baru') {
+      return '';
+    }
+
+    requiredNewCustomerFields = [
+      { key: 'nama_customer_input', label: 'Nama Customer' },
+      { key: 'pic_customer', label: 'PIC Customer' },
+      { key: 'alamat_kirim', label: 'Alamat Kirim' },
+      { key: 'no_hp_customer', label: 'No. HP Customer' },
+      { key: 'link_google_maps', label: 'Link Google Maps' }
+    ];
+
+    for (var i = 0; i < requiredNewCustomerFields.length; i += 1) {
+      if (!String(payload[requiredNewCustomerFields[i].key] || '').trim()) {
+        return requiredNewCustomerFields[i].label + ' wajib diisi untuk customer baru.';
+      }
+    }
+
+    return '';
+  }
+
   function renderSubmitResult_(result) {
     var isWarning = result.butuh_persetujuan === 'Ya';
     var lines = [
@@ -1135,6 +1168,7 @@
     setFieldValue_('admin_tanggal_kirim_rencana', iso);
     setFieldValue_('admin_subtotal', 0);
     setFieldValue_('admin_total', 0);
+    updateSalesNewCustomerRequirements_(getJenisCustomer_() === 'Baru');
   }
 
   function getSelectedCustomer_() {
@@ -1159,6 +1193,22 @@
   function getAdminJenisCustomer_() {
     var selected = document.querySelector('input[name="admin_jenis_customer"]:checked');
     return selected ? selected.value : 'Lama';
+  }
+
+  function updateSalesNewCustomerRequirements_(isRequired) {
+    [
+      'nama_customer_input',
+      'pic_customer',
+      'alamat_kirim',
+      'no_hp_customer',
+      'link_google_maps'
+    ].forEach(function(fieldId) {
+      var element = document.getElementById(fieldId);
+
+      if (element) {
+        element.required = !!isRequired;
+      }
+    });
   }
 
   function setFieldValue_(id, value) {

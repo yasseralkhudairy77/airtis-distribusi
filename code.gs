@@ -171,6 +171,8 @@ function submitSalesOrderFromForm(userId, formData) {
     catatan: formData.catatan
   };
 
+  validateSalesNewCustomerFields_(payload);
+
   return submitSalesOrder(payload);
 }
 
@@ -240,6 +242,28 @@ function submitAgentOrderFromAdmin(userId, formData) {
 function getSuratJalanPrintDataFromDashboard(userId, noSo) {
   requireCurrentUserRole_(['CS/Admin'], userId);
   return toClientValue_(getSuratJalanPrintData(noSo));
+}
+
+function validateSalesNewCustomerFields_(payload) {
+  var requiredFields;
+
+  if (String(payload.jenis_customer || '').trim().toLowerCase() !== 'baru') {
+    return;
+  }
+
+  requiredFields = [
+    { key: 'nama_customer_input', label: 'Nama Customer' },
+    { key: 'pic_customer', label: 'PIC Customer' },
+    { key: 'alamat_kirim', label: 'Alamat Kirim' },
+    { key: 'no_hp_customer', label: 'No. HP Customer' },
+    { key: 'link_google_maps', label: 'Link Google Maps' }
+  ];
+
+  requiredFields.forEach(function(field) {
+    if (!String(payload[field.key] || '').trim()) {
+      throw new Error(field.label + ' wajib diisi untuk customer baru.');
+    }
+  });
 }
 
 function getProductCatalog_() {
