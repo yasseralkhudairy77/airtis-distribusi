@@ -1,0 +1,170 @@
+var APP_CONFIG = {
+  APP_NAME: 'MVP Sales Order',
+  SPREADSHEET_ID: '1plwQFdq771UQ5j_2-lv_ncq9ZevguZlxStBur78Kino',
+  TIMEZONE: 'Asia/Jakarta',
+  SHEETS: {
+    MASTER_CUSTOMER: 'MASTER_CUSTOMER',
+    MASTER_USER: 'MASTER_USER',
+    SALES_ORDER: 'SALES_ORDER',
+    APPROVAL_ORDER: 'APPROVAL_ORDER',
+    SURAT_JALAN: 'SURAT_JALAN',
+    LOG_STATUS_ORDER: 'LOG_STATUS_ORDER',
+    MASTER_ITEM: 'MASTER_ITEM',
+    MASTER_STATUS: 'MASTER_STATUS'
+  },
+  ROLES: ['Sales', 'CS/Admin', 'Approver'],
+  CUSTOMER_STATUS: ['Baru', 'Aktif', 'Menunggak', 'Ditahan'],
+  PAYMENT_STATUS: ['Lancar', 'Menunggak'],
+  ORDER_STATUS: [
+    'Draft',
+    'Menunggu Persetujuan',
+    'Disetujui',
+    'Ditolak',
+    'Siap Kirim',
+    'Terkirim',
+    'Selesai'
+  ],
+  APPROVAL_STATUS: ['Menunggu', 'Disetujui', 'Ditolak'],
+  DELIVERY_STATUS: ['Siap Kirim', 'Terkirim', 'Selesai'],
+  DELIVERY_PRIORITY: ['H-1 Wajib', 'Same Day Opsional', 'Jadwal Biasa'],
+  CUSTOMER_TYPE: ['Lama', 'Baru'],
+  PRINT: {
+    MODE: 'DOT_MATRIX',
+    PAPER_WIDTH_MM: 241,
+    PAPER_HEIGHT_MM: 279,
+    FONT_FAMILY: '"Courier New", monospace',
+    FONT_SIZE_PX: 13,
+    COPY_LABELS: ['Lembar Gudang', 'Lembar Customer']
+  },
+  DOC_PREFIX: {
+    SALES_ORDER: 'SO',
+    APPROVAL: 'APR',
+    SURAT_JALAN: 'SJ'
+  },
+  REQUIRED_SHEETS: [
+    'MASTER_CUSTOMER',
+    'MASTER_USER',
+    'SALES_ORDER',
+    'APPROVAL_ORDER',
+    'SURAT_JALAN'
+  ],
+  OPTIONAL_SHEETS: [
+    'LOG_STATUS_ORDER',
+    'MASTER_ITEM',
+    'MASTER_STATUS'
+  ],
+  HEADERS: {
+    MASTER_CUSTOMER: [
+      'kode_customer',
+      'nama_customer',
+      'tipe_customer',
+      'kategori_customer',
+      'alamat',
+      'link_google_maps',
+      'pic',
+      'no_hp',
+      'latitude',
+      'longitude',
+      'status_customer',
+      'status_pembayaran',
+      'total_tunggakan',
+      'jumlah_nota_overdue',
+      'tanggal_jatuh_tempo_terdekat',
+      'catatan_piutang',
+      'limit_tunggakan',
+      'catatan'
+    ],
+    MASTER_USER: [
+      'user_id',
+      'nama_user',
+      'role',
+      'no_hp',
+      'email',
+      'status_aktif'
+    ],
+    SALES_ORDER: [
+      'no_so',
+      'tanggal_order',
+      'jam_order',
+      'sales_id',
+      'sales_nama',
+      'jenis_customer',
+      'customer_id',
+      'nama_customer_input',
+      'alamat_kirim',
+      'link_google_maps',
+      'latitude',
+      'longitude',
+      'pic_customer',
+      'no_hp_customer',
+      'item',
+      'qty',
+      'harga',
+      'diskon',
+      'subtotal',
+      'total',
+      'term_pembayaran',
+      'status_pembayaran_customer',
+      'total_tunggakan',
+      'jumlah_nota_overdue',
+      'tanggal_jatuh_tempo_terdekat',
+      'catatan_piutang',
+      'status_order',
+      'prioritas_kirim',
+      'tanggal_kirim_rencana',
+      'catatan',
+      'butuh_persetujuan',
+      'alasan_hold'
+    ],
+    APPROVAL_ORDER: [
+      'approval_id',
+      'no_so',
+      'tanggal_pengajuan',
+      'diajukan_oleh',
+      'alasan_approval',
+      'status_approval',
+      'diputuskan_oleh',
+      'tanggal_keputusan',
+      'catatan_approval'
+    ],
+    SURAT_JALAN: [
+      'no_surat_jalan',
+      'no_so',
+      'tanggal_cetak',
+      'tanggal_kirim',
+      'customer_id',
+      'nama_customer',
+      'alamat_kirim',
+      'item',
+      'qty',
+      'driver',
+      'armada',
+      'status_kirim',
+      'catatan_kirim'
+    ],
+    LOG_STATUS_ORDER: [
+      'log_id',
+      'no_so',
+      'tanggal',
+      'jam',
+      'status_lama',
+      'status_baru',
+      'diubah_oleh',
+      'catatan'
+    ],
+    MASTER_ITEM: [
+      'kode_item',
+      'nama_item',
+      'satuan',
+      'harga_default',
+      'status_aktif'
+    ],
+    MASTER_STATUS: [
+      'kategori',
+      'kode',
+      'label',
+      'urutan',
+      'status_aktif'
+    ]
+  }
+};

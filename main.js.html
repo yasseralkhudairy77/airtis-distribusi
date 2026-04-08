@@ -1,0 +1,1507 @@
+<script>
+  window.APP_BOOTSTRAP = <?!= JSON.stringify(getAppBootstrap()); ?>;
+
+  var appState = {
+    currentUser: window.APP_BOOTSTRAP.currentUser || {},
+    customers: [],
+    users: [],
+    products: [],
+    approvals: [],
+    approvers: [],
+    readyOrders: [],
+    deliveryOrders: [],
+    tomorrowOrders: [],
+    tomorrowPlanDate: ''
+  };
+
+  document.addEventListener('DOMContentLoaded', function() {
+    try {
+      bindEvents();
+      applyCurrentUserAccess_();
+      setTodayAsDefault_();
+
+      if (!appState.currentUser.authorized) {
+        setStatusText_('Akses belum aktif');
+        renderUnauthorizedState_();
+        return;
+      }
+
+      setStatusText_('Memuat data aplikasi...');
+      loadAllData_();
+    } catch (error) {
+      setStatusText_('Gagal inisialisasi');
+      renderResult_('Gagal inisialisasi halaman: ' + error.message, true);
+    }
+  });
+
+  function bindEvents() {
+    document.querySelectorAll('.tab-btn').forEach(function(button) {
+      button.addEventListener('click', function() {
+        activateTab_(button.dataset.tab);
+      });
+    });
+
+    document.getElementById('sales_id').addEventListener('change', handleSalesChange_);
+    document.getElementById('customer_id').addEventListener('change', handleCustomerChange_);
+    document.getElementById('item').addEventListener('change', handleProductChange_);
+    document.querySelectorAll('input[name="jenis_customer"]').forEach(function(input) {
+      input.addEventListener('change', handleJenisCustomerChange_);
+    });
+    document.getElementById('qty').addEventListener('input', calculateTotals_);
+    document.getElementById('harga').addEventListener('input', calculateTotals_);
+    document.getElementById('diskon').addEventListener('input', calculateTotals_);
+    document.getElementById('resetBtn').addEventListener('click', resetForm_);
+    document.getElementById('salesOrderForm').addEventListener('submit', submitForm_);
+    document.getElementById('refreshApproverBtn').addEventListener('click', loadApproverData_);
+    document.getElementById('refreshAdminBtn').addEventListener('click', loadAdminData_);
+    document.getElementById('admin_customer_id').addEventListener('change', handleAdminCustomerChange_);
+    document.getElementById('admin_item').addEventListener('change', handleAdminProductChange_);
+    document.querySelectorAll('input[name="admin_jenis_customer"]').forEach(function(input) {
+      input.addEventListener('change', handleAdminJenisCustomerChange_);
+    });
+    document.getElementById('admin_qty').addEventListener('input', calculateAdminTotals_);
+    document.getElementById('admin_harga').addEventListener('input', calculateAdminTotals_);
+    document.getElementById('admin_diskon').addEventListener('input', calculateAdminTotals_);
+    document.getElementById('resetAgentBtn').addEventListener('click', resetAgentForm_);
+    document.getElementById('agentOrderForm').addEventListener('submit', submitAgentOrderForm_);
+    document.getElementById('openAgentModalBtn').addEventListener('click', openAgentModal_);
+    document.getElementById('closeAgentModalBtn').addEventListener('click', closeAgentModal_);
+    document.getElementById('generateTomorrowPlanBtn').addEventListener('click', handleGenerateTomorrowPlan_);
+    document.getElementById('copyTomorrowPlanBtn').addEventListener('click', handleCopyTomorrowPlan_);
+    document.getElementById('agentModalBackdrop').addEventListener('click', function(event) {
+      if (event.target.id === 'agentModalBackdrop') {
+        closeAgentModal_();
+      }
+    });
+  }
+
+  function loadAllData_() {
+    if (currentUserHasRole_('sales')) {
+      loadSalesData_(function() {
+        setStatusText_('Data aplikasi siap dipakai');
+      });
+      return;
+    }
+
+    if (currentUserHasRole_('approver')) {
+      loadApproverData_(function() {
+        setStatusText_('Data aplikasi siap dipakai');
+      });
+      return;
+    }
+
+    if (currentUserHasRole_('cs_admin')) {
+      loadAdminData_(function() {
+        setStatusText_('Data aplikasi siap dipakai');
+      });
+      return;
+    }
+
+    setStatusText_('Role belum didukung');
+    renderResult_('Role user belum dikenali oleh webapp.', true);
+  }
+
+  function loadSalesData_(callback) {
+    google.script.run
+      .withSuccessHandler(function(data) {
+        try {
+          var payload = data || {};
+
+          appState.customers = Array.isArray(payload.customers) ? payload.customers : [];
+          appState.users = Array.isArray(payload.users) ? payload.users : [];
+          appState.products = Array.isArray(payload.products) ? payload.products : [];
+          appState.currentUser = payload.currentUser || appState.currentUser;
+
+          renderSalesOptions_();
+          renderCustomerOptions_();
+          renderProductOptions_();
+          handleSalesChange_();
+          handleCustomerChange_();
+          handleProductChange_();
+
+          if (callback) callback();
+        } catch (error) {
+          setStatusText_('Gagal render data sales');
+          renderResult_('Gagal render data sales: ' + error.message, true);
+        }
+      })
+      .withFailureHandler(function(error) {
+        setStatusText_('Gagal memuat data sales');
+        renderResult_('Gagal memuat data sales: ' + error.message, true);
+      })
+      .getSalesOrderFormData();
+  }
+
+  function loadApproverData_(callback) {
+    google.script.run
+      .withSuccessHandler(function(data) {
+        try {
+          var payload = data || {};
+
+          appState.approvals = Array.isArray(payload.approvals) ? payload.approvals : [];
+          appState.approvers = Array.isArray(payload.approvers) ? payload.approvers : [];
+          appState.currentUser = payload.currentUser || appState.currentUser;
+
+          renderApproverOptions_();
+          renderApproverTable_();
+
+          if (callback) callback();
+        } catch (error) {
+          setStatusText_('Gagal render data approval');
+          renderResult_('Gagal render data approval: ' + error.message, true);
+        }
+      })
+      .withFailureHandler(function(error) {
+        setStatusText_('Gagal memuat data approval');
+        renderResult_('Gagal memuat data approval: ' + error.message, true);
+      })
+      .getApproverDashboardData();
+  }
+
+  function loadAdminData_(callback) {
+    google.script.run
+      .withSuccessHandler(function(data) {
+        try {
+          var payload = data || {};
+
+          appState.readyOrders = Array.isArray(payload.readyOrders) ? payload.readyOrders : [];
+          appState.deliveryOrders = Array.isArray(payload.deliveryOrders) ? payload.deliveryOrders : [];
+          appState.tomorrowOrders = Array.isArray(payload.tomorrowOrders) ? payload.tomorrowOrders : [];
+          appState.tomorrowPlanDate = String(payload.tomorrowPlanDate || '');
+          appState.customers = Array.isArray(payload.customers) ? payload.customers : appState.customers;
+          appState.products = Array.isArray(payload.products) ? payload.products : appState.products;
+          appState.currentUser = payload.currentUser || appState.currentUser;
+
+          renderAdminCustomerOptions_();
+          renderAdminProductOptions_();
+          handleAdminCustomerChange_();
+          handleAdminProductChange_();
+          renderAdminSummary_();
+          renderTomorrowPlanSummary_();
+          renderTomorrowPlanTable_();
+          resetTomorrowPlanOutput_();
+          renderReadyOrderTable_();
+          renderDeliveryTable_();
+
+          if (callback) callback();
+        } catch (error) {
+          var message = 'Gagal render data admin: ' + (error && error.message ? error.message : error);
+          setStatusText_(message);
+          renderResult_(message, true);
+        }
+      })
+      .withFailureHandler(function(error) {
+        var message = 'Gagal memuat data admin: ' + error.message;
+        setStatusText_(message);
+        renderResult_(message, true);
+      })
+      .getAdminDashboardData();
+  }
+
+  function activateTab_(tabName) {
+    if (!canAccessTab_(tabName)) {
+      return;
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(function(button) {
+      button.classList.toggle('active', button.dataset.tab === tabName);
+    });
+
+    document.querySelectorAll('.tab-panel').forEach(function(panel) {
+      panel.classList.toggle('active', panel.id === 'tab-' + tabName);
+    });
+  }
+
+  function renderSalesOptions_() {
+    var salesSelect = document.getElementById('sales_id');
+    salesSelect.innerHTML = '<option value="">Pilih sales</option>';
+
+    appState.users.forEach(function(user) {
+      var option = document.createElement('option');
+      option.value = user.user_id;
+      option.textContent = user.nama_user + ' (' + user.user_id + ')';
+      option.dataset.nama = user.nama_user;
+      salesSelect.appendChild(option);
+    });
+
+    if (appState.currentUser && appState.currentUser.user_id) {
+      salesSelect.value = appState.currentUser.user_id;
+    }
+
+    salesSelect.disabled = true;
+  }
+
+  function renderCustomerOptions_() {
+    var customerSelect = document.getElementById('customer_id');
+    customerSelect.innerHTML = '<option value="">Pilih customer lama</option>';
+
+    appState.customers.forEach(function(customer) {
+      var option = document.createElement('option');
+      option.value = customer.kode_customer;
+      option.textContent = customer.nama_customer + ' (' + customer.kode_customer + ')';
+      customerSelect.appendChild(option);
+    });
+  }
+
+  function renderAdminCustomerOptions_() {
+    var customerSelect = document.getElementById('admin_customer_id');
+    customerSelect.innerHTML = '<option value="">Pilih agen / customer</option>';
+
+    appState.customers.forEach(function(customer) {
+      var option = document.createElement('option');
+      option.value = customer.kode_customer;
+      option.textContent = customer.nama_customer + ' (' + customer.kode_customer + ')';
+      customerSelect.appendChild(option);
+    });
+  }
+
+  function renderProductOptions_() {
+    var productSelect = document.getElementById('item');
+    productSelect.innerHTML = '<option value="">Pilih produk</option>';
+
+    appState.products.forEach(function(product) {
+      var option = document.createElement('option');
+      option.value = product.nama_item;
+      option.textContent = product.nama_item;
+      option.dataset.harga = product.harga_default || 0;
+      productSelect.appendChild(option);
+    });
+  }
+
+  function renderAdminProductOptions_() {
+    var productSelect = document.getElementById('admin_item');
+    productSelect.innerHTML = '<option value="">Pilih produk</option>';
+
+    appState.products.forEach(function(product) {
+      var option = document.createElement('option');
+      option.value = product.nama_item;
+      option.textContent = product.nama_item;
+      option.dataset.harga = product.harga_default || 0;
+      productSelect.appendChild(option);
+    });
+  }
+
+  function renderApproverOptions_() {
+    var approverSelect = document.getElementById('approver_id');
+    approverSelect.innerHTML = '<option value="">Pilih approver</option>';
+
+    appState.approvers.forEach(function(user) {
+      var option = document.createElement('option');
+      option.value = user.user_id;
+      option.textContent = user.nama_user + ' (' + user.user_id + ')';
+      approverSelect.appendChild(option);
+    });
+
+    if (appState.currentUser && appState.currentUser.user_id) {
+      approverSelect.value = appState.currentUser.user_id;
+    }
+
+    approverSelect.disabled = true;
+  }
+
+  function renderApproverTable_() {
+    var tbody = document.getElementById('approverTableBody');
+    if (!tbody) return;
+
+    if (!appState.approvals.length) {
+      tbody.innerHTML = '<tr><td colspan="8" class="empty-cell">Belum ada data approval.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = appState.approvals.map(function(row) {
+      var noSo = String(row.no_so || '');
+      var tunggakanHtml = buildApprovalRiskSummary_(row);
+
+      return '' +
+        '<tr>' +
+          '<td>' + escapeHtml_(noSo) + '</td>' +
+          '<td>' + escapeHtml_(row.customer) + '</td>' +
+          '<td>' + escapeHtml_(row.item) + ' / ' + escapeHtml_(String(row.qty || '')) + '</td>' +
+          '<td>' + buildPaymentBadge_(row.status_pembayaran_customer) + '</td>' +
+          '<td>' + tunggakanHtml + '</td>' +
+          '<td>' + formatNumber_(row.total) + '</td>' +
+          '<td>' + escapeHtml_(row.alasan_approval) + '</td>' +
+          '<td><div class="inline-actions">' +
+            '<input class="mini-input" id="approval-note-' + escapeHtml_(noSo) + '" type="text" placeholder="Catatan wajib" />' +
+            '<button type="button" class="approve-btn" onclick="handleApproveOrder(\'' + escapeJs_(noSo) + '\')">Approve</button>' +
+            '<button type="button" class="danger-btn" onclick="handleRejectOrder(\'' + escapeJs_(noSo) + '\')">Reject</button>' +
+          '</div></td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function renderReadyOrderTable_() {
+    var tbody = document.getElementById('readyOrderTableBody');
+    if (!tbody) return;
+
+    if (!appState.readyOrders.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-cell">Belum ada order siap kirim.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = appState.readyOrders.map(function(row) {
+      var noSo = String(row.no_so || '');
+
+      return '' +
+        '<tr>' +
+          '<td>' + escapeHtml_(noSo) + '</td>' +
+          '<td>' + escapeHtml_(row.nama_customer_input) + '</td>' +
+          '<td>' + escapeHtml_(row.item) + '</td>' +
+          '<td>' + escapeHtml_(String(row.qty || '')) + '</td>' +
+          '<td>' + buildStatusBadge_(row.status_order) + '</td>' +
+          '<td>' + formatNumber_(row.total) + '</td>' +
+          '<td><div class="inline-actions">' +
+            '<button type="button" class="approve-btn" onclick="handleCreateSuratJalan(\'' + escapeJs_(noSo) + '\')">Buat SJ</button>' +
+          '</div></td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function renderDeliveryTable_() {
+    var tbody = document.getElementById('deliveryTableBody');
+    if (!tbody) return;
+
+    if (!appState.deliveryOrders.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-cell">Belum ada surat jalan.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = appState.deliveryOrders.map(function(row) {
+      var noSo = String(row.no_so || '');
+      var actions = [];
+
+      if (String(row.status_kirim || '') === 'Siap Kirim') {
+        actions.push('<button type="button" class="approve-btn" onclick="handleMarkDelivered(\'' + escapeJs_(noSo) + '\')">Terkirim</button>');
+      }
+
+      if (String(row.status_kirim || '') === 'Terkirim') {
+        actions.push('<button type="button" class="ghost-btn" onclick="handleCompleteOrder(\'' + escapeJs_(noSo) + '\')">Selesai</button>');
+      }
+
+      actions.push('<button type="button" class="ghost-btn" onclick="handlePrintSuratJalan(\'' + escapeJs_(noSo) + '\')">Print</button>');
+
+      return '' +
+        '<tr>' +
+          '<td>' + escapeHtml_(row.no_surat_jalan) + '</td>' +
+          '<td>' + escapeHtml_(noSo) + '</td>' +
+          '<td>' + escapeHtml_(row.nama_customer) + '</td>' +
+          '<td>' + buildStatusBadge_(row.status_kirim) + '</td>' +
+          '<td>' + escapeHtml_(row.driver || '') + '</td>' +
+          '<td>' + escapeHtml_(row.armada || '') + '</td>' +
+          '<td><div class="inline-actions">' + actions.join('') + '</div></td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function renderAdminSummary_() {
+    setText_('summaryReadyOrders', String(appState.readyOrders.length || 0));
+    setText_('summaryDeliveryReady', String(countDeliveryByStatus_('Siap Kirim')));
+    setText_('summaryDelivered', String(countDeliveryByStatus_('Terkirim')));
+    setText_('summaryCompleted', String(countDeliveryByStatus_('Selesai')));
+  }
+
+  function renderTomorrowPlanSummary_() {
+    var outletMap = {};
+    var itemMap = {};
+
+    appState.tomorrowOrders.forEach(function(row) {
+      outletMap[getTomorrowOutletKey_(row)] = true;
+      itemMap[String(row.item || '').trim()] = true;
+    });
+
+    setText_('summaryTomorrowOutlets', String(countNonEmptyKeys_(outletMap)));
+    setText_('summaryTomorrowOrders', String(appState.tomorrowOrders.length || 0));
+    setText_('summaryTomorrowItems', String(countNonEmptyKeys_(itemMap)));
+  }
+
+  function renderTomorrowPlanTable_() {
+    var tbody = document.getElementById('tomorrowPlanTableBody');
+    if (!tbody) return;
+
+    if (!appState.tomorrowOrders.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-cell">Belum ada rencana kirim untuk besok.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = appState.tomorrowOrders.map(function(row) {
+      return '' +
+        '<tr>' +
+          '<td>' + escapeHtml_(row.no_so) + '</td>' +
+          '<td>' + escapeHtml_(row.nama_customer_input) + '</td>' +
+          '<td>' + escapeHtml_(row.item) + '</td>' +
+          '<td>' + escapeHtml_(buildTomorrowQtyLabel_(row)) + '</td>' +
+          '<td>' + escapeHtml_(extractAreaLabel_(row.alamat_kirim)) + '</td>' +
+          '<td>' + buildStatusBadge_(getTomorrowDisplayStatus_(row)) + '</td>' +
+          '<td>' + escapeHtml_(row.sales_nama || '-') + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function resetTomorrowPlanOutput_() {
+    var output = document.getElementById('tomorrowPlanOutput');
+    if (!output) return;
+
+    output.value = '';
+    document.getElementById('copyTomorrowPlanBtn').disabled = true;
+  }
+
+  function handleGenerateTomorrowPlan_() {
+    var output = document.getElementById('tomorrowPlanOutput');
+    if (!output) return;
+
+    output.value = buildTomorrowPlanMessage_();
+    document.getElementById('copyTomorrowPlanBtn').disabled = !String(output.value || '').trim();
+    setStatusText_('Rekap rencana kirim besok berhasil dibuat');
+  }
+
+  function handleCopyTomorrowPlan_() {
+    var output = document.getElementById('tomorrowPlanOutput');
+    var text = output ? String(output.value || '').trim() : '';
+
+    if (!text) {
+      setStatusText_('Generate rekap dulu sebelum copy format grup');
+      return;
+    }
+
+    copyTextToClipboard_(text, function() {
+      setStatusText_('Format grup delivery berhasil disalin');
+    }, function() {
+      setStatusText_('Gagal menyalin otomatis. Silakan copy manual dari preview');
+      output.focus();
+      output.select();
+    });
+  }
+
+  function handleSalesChange_() {
+    var salesSelect = document.getElementById('sales_id');
+    var selectedOption = salesSelect.options[salesSelect.selectedIndex];
+    var fallbackName = appState.currentUser ? appState.currentUser.nama_user : '';
+    document.getElementById('sales_nama').value = selectedOption ? (selectedOption.dataset.nama || fallbackName) : fallbackName;
+  }
+
+  function handleJenisCustomerChange_() {
+    var jenisCustomer = getJenisCustomer_();
+    var isLama = jenisCustomer === 'Lama';
+
+    document.getElementById('customerLamaSection').classList.toggle('hidden', !isLama);
+    document.getElementById('customerBaruSection').classList.toggle('hidden', isLama);
+
+    if (isLama) {
+      handleCustomerChange_();
+    } else {
+      clearCustomerInfo_();
+      setFieldValue_('customer_id', '');
+      setFieldValue_('nama_customer_input', '');
+      setFieldValue_('pic_customer', '');
+      setFieldValue_('alamat_kirim', '');
+      setFieldValue_('no_hp_customer', '');
+      setFieldValue_('link_google_maps', '');
+      setFieldValue_('latitude', '');
+      setFieldValue_('longitude', '');
+    }
+  }
+
+  function handleCustomerChange_() {
+    var customer = getSelectedCustomer_();
+
+    if (!customer) {
+      clearCustomerInfo_();
+      return;
+    }
+
+    setText_('infoStatusCustomer', customer.status_customer || '-');
+    setText_('infoStatusPembayaran', customer.status_pembayaran || '-');
+    setText_('infoTotalTunggakan', formatCustomerMoney_(customer.total_tunggakan));
+    setText_('infoNotaOverdue', formatCustomerCount_(customer.jumlah_nota_overdue));
+    setText_('infoJatuhTempo', formatCustomerDateValue_(customer.tanggal_jatuh_tempo_terdekat));
+    setText_('infoAlamat', customer.alamat || '-');
+    setText_('infoPic', customer.pic || '-');
+    setText_('infoHp', customer.no_hp || '-');
+    setText_('infoCatatanPiutang', customer.catatan_piutang || customer.catatan || '-');
+
+    setFieldValue_('nama_customer_input', customer.nama_customer || '');
+    setFieldValue_('pic_customer', customer.pic || '');
+    setFieldValue_('alamat_kirim', customer.alamat || '');
+    setFieldValue_('no_hp_customer', customer.no_hp || '');
+    setFieldValue_('link_google_maps', customer.link_google_maps || '');
+    setFieldValue_('latitude', customer.latitude || '');
+    setFieldValue_('longitude', customer.longitude || '');
+  }
+
+  function handleAdminJenisCustomerChange_() {
+    var jenisCustomer = getAdminJenisCustomer_();
+    var isLama = jenisCustomer === 'Lama';
+
+    document.getElementById('adminCustomerLamaSection').classList.toggle('hidden', !isLama);
+    document.getElementById('adminCustomerBaruSection').classList.toggle('hidden', isLama);
+
+    if (isLama) {
+      handleAdminCustomerChange_();
+    } else {
+      clearAdminCustomerInfo_();
+      setFieldValue_('admin_customer_id', '');
+      setFieldValue_('admin_nama_customer_input', '');
+      setFieldValue_('admin_pic_customer', '');
+      setFieldValue_('admin_alamat_kirim', '');
+      setFieldValue_('admin_no_hp_customer', '');
+    }
+  }
+
+  function handleAdminCustomerChange_() {
+    var customer = getSelectedAdminCustomer_();
+
+    if (!customer) {
+      clearAdminCustomerInfo_();
+      return;
+    }
+
+    setText_('adminInfoStatusCustomer', customer.status_customer || '-');
+    setText_('adminInfoStatusPembayaran', customer.status_pembayaran || '-');
+    setText_('adminInfoTotalTunggakan', formatCustomerMoney_(customer.total_tunggakan));
+    setText_('adminInfoNotaOverdue', formatCustomerCount_(customer.jumlah_nota_overdue));
+    setText_('adminInfoJatuhTempo', formatCustomerDateValue_(customer.tanggal_jatuh_tempo_terdekat));
+    setText_('adminInfoAlamat', customer.alamat || '-');
+    setText_('adminInfoPic', customer.pic || '-');
+    setText_('adminInfoHp', customer.no_hp || '-');
+    setText_('adminInfoCatatanPiutang', customer.catatan_piutang || customer.catatan || '-');
+
+    setFieldValue_('admin_nama_customer_input', customer.nama_customer || '');
+    setFieldValue_('admin_pic_customer', customer.pic || '');
+    setFieldValue_('admin_alamat_kirim', customer.alamat || '');
+    setFieldValue_('admin_no_hp_customer', customer.no_hp || '');
+  }
+
+  function handleProductChange_() {
+    var productSelect = document.getElementById('item');
+    if (!productSelect) return;
+    var selectedOption = productSelect.options[productSelect.selectedIndex];
+    var harga = selectedOption ? Number(selectedOption.dataset.harga || 0) : 0;
+    setFieldValue_('harga', harga);
+    calculateTotals_();
+  }
+
+  function handleAdminProductChange_() {
+    var productSelect = document.getElementById('admin_item');
+    if (!productSelect) return;
+    var selectedOption = productSelect.options[productSelect.selectedIndex];
+    var harga = selectedOption ? Number(selectedOption.dataset.harga || 0) : 0;
+    setFieldValue_('admin_harga', harga);
+    calculateAdminTotals_();
+  }
+
+  function clearCustomerInfo_() {
+    setText_('infoStatusCustomer', '-');
+    setText_('infoStatusPembayaran', '-');
+    setText_('infoTotalTunggakan', '-');
+    setText_('infoNotaOverdue', '-');
+    setText_('infoJatuhTempo', '-');
+    setText_('infoAlamat', '-');
+    setText_('infoPic', '-');
+    setText_('infoHp', '-');
+    setText_('infoCatatanPiutang', '-');
+  }
+
+  function clearAdminCustomerInfo_() {
+    setText_('adminInfoStatusCustomer', '-');
+    setText_('adminInfoStatusPembayaran', '-');
+    setText_('adminInfoTotalTunggakan', '-');
+    setText_('adminInfoNotaOverdue', '-');
+    setText_('adminInfoJatuhTempo', '-');
+    setText_('adminInfoAlamat', '-');
+    setText_('adminInfoPic', '-');
+    setText_('adminInfoHp', '-');
+    setText_('adminInfoCatatanPiutang', '-');
+  }
+
+  function calculateTotals_() {
+    var qty = Number(getFieldValue_('qty') || 0);
+    var harga = Number(getFieldValue_('harga') || 0);
+    var diskon = Number(getFieldValue_('diskon') || 0);
+    var subtotal = qty * harga;
+    var total = subtotal - diskon;
+
+    setFieldValue_('subtotal', subtotal > 0 ? subtotal : 0);
+    setFieldValue_('total', total > 0 ? total : 0);
+  }
+
+  function calculateAdminTotals_() {
+    var qty = Number(getFieldValue_('admin_qty') || 0);
+    var harga = Number(getFieldValue_('admin_harga') || 0);
+    var diskon = Number(getFieldValue_('admin_diskon') || 0);
+    var subtotal = qty * harga;
+    var total = subtotal - diskon;
+
+    setFieldValue_('admin_subtotal', subtotal > 0 ? subtotal : 0);
+    setFieldValue_('admin_total', total > 0 ? total : 0);
+  }
+
+  function submitForm_(event) {
+    event.preventDefault();
+
+    var payload = collectFormData_();
+    var submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    setStatusText_('Mengirim order...');
+
+    google.script.run
+      .withSuccessHandler(function(result) {
+        submitBtn.disabled = false;
+        setStatusText_('Order berhasil diproses');
+        renderSubmitResult_(result);
+        loadSalesData_();
+      })
+      .withFailureHandler(function(error) {
+        submitBtn.disabled = false;
+        setStatusText_('Order gagal diproses');
+        renderResult_('Gagal submit order: ' + error.message, true);
+      })
+      .submitSalesOrderFromForm(payload);
+  }
+
+  function handleApproveOrder(noSo) {
+    var catatan = getFieldValue_('approval-note-' + noSo);
+
+    if (!String(catatan || '').trim()) {
+      renderResult_('Catatan approval wajib diisi sebelum approve order.', true);
+      return;
+    }
+
+    setStatusText_('Memproses approval...');
+    google.script.run
+      .withSuccessHandler(function(result) {
+        setStatusText_('Approval berhasil');
+        renderResult_('Order ' + result.no_so + ' disetujui dan status menjadi ' + result.status_order, false);
+        loadApproverData_();
+      })
+      .withFailureHandler(function(error) {
+        setStatusText_('Approval gagal');
+        renderResult_('Gagal approve order: ' + error.message, true);
+      })
+      .approveOrderFromDashboard({
+        no_so: noSo,
+        catatan_approval: catatan
+      });
+  }
+
+  function handleRejectOrder(noSo) {
+    var catatan = getFieldValue_('approval-note-' + noSo);
+
+    if (!String(catatan || '').trim()) {
+      renderResult_('Catatan approval wajib diisi sebelum reject order.', true);
+      return;
+    }
+
+    setStatusText_('Memproses reject...');
+    google.script.run
+      .withSuccessHandler(function(result) {
+        setStatusText_('Reject berhasil');
+        renderResult_('Order ' + result.no_so + ' ditolak.', true);
+        loadApproverData_();
+      })
+      .withFailureHandler(function(error) {
+        setStatusText_('Reject gagal');
+        renderResult_('Gagal reject order: ' + error.message, true);
+      })
+      .rejectOrderFromDashboard({
+        no_so: noSo,
+        catatan_approval: catatan
+      });
+  }
+
+  function handleCreateSuratJalan(noSo) {
+    setStatusText_('Membuat surat jalan...');
+    google.script.run
+      .withSuccessHandler(function(result) {
+        setStatusText_('Surat jalan berhasil dibuat');
+        renderResult_('Surat jalan ' + result.no_surat_jalan + ' berhasil dibuat untuk order ' + result.no_so, false);
+        loadAdminData_();
+      })
+      .withFailureHandler(function(error) {
+        setStatusText_('Gagal membuat surat jalan');
+        renderResult_('Gagal membuat surat jalan: ' + error.message, true);
+      })
+      .createSuratJalanFromDashboard({
+        no_so: noSo,
+        driver: '',
+        armada: '',
+        catatan_kirim: ''
+      });
+  }
+
+  function handleMarkDelivered(noSo) {
+    setStatusText_('Mengubah status menjadi Terkirim...');
+    google.script.run
+      .withSuccessHandler(function(result) {
+        setStatusText_('Status pengiriman diperbarui');
+        renderResult_('Order ' + result.no_so + ' berubah menjadi ' + result.status_order, false);
+        loadAdminData_();
+      })
+      .withFailureHandler(function(error) {
+        setStatusText_('Gagal update status');
+        renderResult_('Gagal update status kirim: ' + error.message, true);
+      })
+      .markOrderDeliveredFromDashboard({
+        no_so: noSo,
+        catatan_kirim: 'Diupdate dari webapp admin'
+      });
+  }
+
+  function handleCompleteOrder(noSo) {
+    setStatusText_('Menyelesaikan order...');
+    google.script.run
+      .withSuccessHandler(function(result) {
+        setStatusText_('Order selesai');
+        renderResult_('Order ' + result.no_so + ' berubah menjadi ' + result.status_order, false);
+        loadAdminData_();
+      })
+      .withFailureHandler(function(error) {
+        setStatusText_('Gagal menyelesaikan order');
+        renderResult_('Gagal menyelesaikan order: ' + error.message, true);
+      })
+      .completeOrderFromDashboard({
+        no_so: noSo,
+        catatan_kirim: 'Order selesai dari webapp admin'
+      });
+  }
+
+  function handlePrintSuratJalan(noSo) {
+    setStatusText_('Menyiapkan halaman print...');
+    google.script.run
+      .withSuccessHandler(function(data) {
+        setStatusText_('Halaman print siap');
+        openPrintWindow_(data || {});
+      })
+      .withFailureHandler(function(error) {
+        setStatusText_('Gagal menyiapkan print');
+        renderResult_('Gagal menyiapkan print surat jalan: ' + error.message, true);
+      })
+      .getSuratJalanPrintDataFromDashboard(noSo);
+  }
+
+  function submitAgentOrderForm_(event) {
+    event.preventDefault();
+
+    var payload = collectAgentFormData_();
+    var submitBtn = document.getElementById('submitAgentBtn');
+    submitBtn.disabled = true;
+    setStatusText_('Mengirim pengiriman agen...');
+
+    google.script.run
+      .withSuccessHandler(function(result) {
+        submitBtn.disabled = false;
+        setStatusText_('Pengiriman agen berhasil diproses');
+        renderResult_(
+          'Order agen berhasil dibuat.\nNo. SO: ' + result.no_so + '\nStatus Order: ' + result.status_order,
+          result.butuh_persetujuan === 'Ya'
+        );
+        resetAgentForm_();
+        closeAgentModal_();
+        loadAdminData_();
+      })
+      .withFailureHandler(function(error) {
+        submitBtn.disabled = false;
+        setStatusText_('Pengiriman agen gagal diproses');
+        renderResult_('Gagal submit pengiriman agen: ' + error.message, true);
+      })
+      .submitAgentOrderFromAdmin(payload);
+  }
+
+  function collectFormData_() {
+    calculateTotals_();
+
+    var jenisCustomer = getJenisCustomer_();
+    var selectedCustomer = getSelectedCustomer_();
+    var formData = {
+      sales_id: getFieldValue_('sales_id'),
+      sales_nama: getFieldValue_('sales_nama') || (appState.currentUser ? appState.currentUser.nama_user : ''),
+      jenis_customer: jenisCustomer,
+      customer_id: jenisCustomer === 'Lama' ? getFieldValue_('customer_id') : '',
+      nama_customer_input: getFieldValue_('nama_customer_input'),
+      alamat_kirim: getFieldValue_('alamat_kirim'),
+      link_google_maps: getFieldValue_('link_google_maps'),
+      latitude: getFieldValue_('latitude'),
+      longitude: getFieldValue_('longitude'),
+      pic_customer: getFieldValue_('pic_customer'),
+      no_hp_customer: getFieldValue_('no_hp_customer'),
+      item: getFieldValue_('item'),
+      qty: getFieldValue_('qty'),
+      harga: getFieldValue_('harga'),
+      diskon: getFieldValue_('diskon') || 0,
+      subtotal: getFieldValue_('subtotal') || 0,
+      total: getFieldValue_('total') || 0,
+      term_pembayaran: getFieldValue_('term_pembayaran'),
+      tanggal_kirim_rencana: getFieldValue_('tanggal_kirim_rencana'),
+      catatan: getFieldValue_('catatan')
+    };
+
+    if (jenisCustomer === 'Lama' && selectedCustomer) {
+      formData.nama_customer_input = selectedCustomer.nama_customer || formData.nama_customer_input;
+      formData.alamat_kirim = formData.alamat_kirim || selectedCustomer.alamat || '';
+      formData.pic_customer = formData.pic_customer || selectedCustomer.pic || '';
+      formData.no_hp_customer = formData.no_hp_customer || selectedCustomer.no_hp || '';
+      formData.link_google_maps = formData.link_google_maps || selectedCustomer.link_google_maps || '';
+      formData.latitude = formData.latitude || selectedCustomer.latitude || '';
+      formData.longitude = formData.longitude || selectedCustomer.longitude || '';
+    }
+
+    return formData;
+  }
+
+  function collectAgentFormData_() {
+    calculateAdminTotals_();
+
+    var jenisCustomer = getAdminJenisCustomer_();
+    var selectedCustomer = getSelectedAdminCustomer_();
+    var formData = {
+      jenis_customer: jenisCustomer,
+      customer_id: jenisCustomer === 'Lama' ? getFieldValue_('admin_customer_id') : '',
+      nama_customer_input: getFieldValue_('admin_nama_customer_input'),
+      alamat_kirim: getFieldValue_('admin_alamat_kirim'),
+      link_google_maps: '',
+      latitude: '',
+      longitude: '',
+      pic_customer: getFieldValue_('admin_pic_customer'),
+      no_hp_customer: getFieldValue_('admin_no_hp_customer'),
+      item: getFieldValue_('admin_item'),
+      qty: getFieldValue_('admin_qty'),
+      harga: getFieldValue_('admin_harga'),
+      diskon: getFieldValue_('admin_diskon') || 0,
+      subtotal: getFieldValue_('admin_subtotal') || 0,
+      total: getFieldValue_('admin_total') || 0,
+      term_pembayaran: getFieldValue_('admin_term_pembayaran'),
+      tanggal_kirim_rencana: getFieldValue_('admin_tanggal_kirim_rencana'),
+      catatan: getFieldValue_('admin_catatan')
+    };
+
+    if (jenisCustomer === 'Lama' && selectedCustomer) {
+      formData.nama_customer_input = selectedCustomer.nama_customer || formData.nama_customer_input;
+      formData.alamat_kirim = formData.alamat_kirim || selectedCustomer.alamat || '';
+      formData.pic_customer = formData.pic_customer || selectedCustomer.pic || '';
+      formData.no_hp_customer = formData.no_hp_customer || selectedCustomer.no_hp || '';
+    }
+
+    return formData;
+  }
+
+  function renderSubmitResult_(result) {
+    var isWarning = result.butuh_persetujuan === 'Ya';
+    var lines = [
+      'No. SO: ' + result.no_so,
+      'Status Order: ' + result.status_order,
+      'Butuh Persetujuan: ' + result.butuh_persetujuan
+    ];
+
+    if (result.alasan_hold) {
+      lines.push('Alasan Hold: ' + result.alasan_hold);
+    }
+
+    renderResult_(lines.join('\n'), isWarning);
+  }
+
+  function renderResult_(message, isWarning) {
+    var resultContent = document.getElementById('resultContent');
+    if (!resultContent) return;
+    resultContent.textContent = message;
+    resultContent.className = isWarning ? 'result-warn' : 'result-ok';
+  }
+
+  function setStatusText_(message) {
+    setText_('statusText', message);
+  }
+
+  function applyCurrentUserAccess_() {
+    var currentUser = appState.currentUser || {};
+    var roleKey = currentUser.role_key || '';
+    var summary = 'Email: ' + (currentUser.email || '-');
+
+    if (currentUser.authorized) {
+      summary = (currentUser.nama_user || currentUser.email || '-') + ' | ' + (currentUser.role || '-');
+    }
+
+    setText_('userSummary', summary);
+
+    document.querySelectorAll('.tab-btn').forEach(function(button) {
+      var allowed = button.dataset.role === roleKey;
+      button.classList.toggle('hidden', !allowed);
+      button.disabled = !allowed;
+    });
+
+    document.querySelectorAll('.tab-panel').forEach(function(panel) {
+      panel.classList.toggle('hidden', panel.dataset.role !== roleKey);
+      panel.classList.remove('active');
+    });
+
+    if (currentUser.authorized) {
+      activateTab_(roleKey === 'cs_admin' ? 'admin' : roleKey);
+    }
+  }
+
+  function renderUnauthorizedState_() {
+    document.getElementById('authNotice').classList.remove('hidden');
+    setText_(
+      'authNoticeText',
+      'Email login ' + (appState.currentUser.email || '-') + ' belum terdaftar aktif di MASTER_USER. Tambahkan user dulu agar webapp bisa dipakai.'
+    );
+    document.querySelectorAll('.tab-btn').forEach(function(button) {
+      button.classList.add('hidden');
+    });
+    document.querySelectorAll('.tab-panel').forEach(function(panel) {
+      panel.classList.remove('active');
+      panel.classList.add('hidden');
+    });
+  }
+
+  function resetForm_() {
+    document.getElementById('salesOrderForm').reset();
+    setTodayAsDefault_();
+    clearCustomerInfo_();
+    setFieldValue_('sales_nama', '');
+    setFieldValue_('subtotal', 0);
+    setFieldValue_('total', 0);
+    renderResult_('Belum ada order yang dikirim.', false);
+    document.querySelector('input[name="jenis_customer"][value="Lama"]').checked = true;
+    handleJenisCustomerChange_();
+    handleSalesChange_();
+    handleProductChange_();
+    setStatusText_('Form sudah direset');
+  }
+
+  function resetAgentForm_() {
+    document.getElementById('agentOrderForm').reset();
+    document.querySelector('input[name="admin_jenis_customer"][value="Lama"]').checked = true;
+    clearAdminCustomerInfo_();
+    setFieldValue_('admin_subtotal', 0);
+    setFieldValue_('admin_total', 0);
+    handleAdminJenisCustomerChange_();
+    handleAdminProductChange_();
+    setFieldValue_('admin_tanggal_kirim_rencana', getFieldValue_('tanggal_kirim_rencana'));
+  }
+
+  function openAgentModal_() {
+    resetAgentForm_();
+    document.getElementById('agentModalBackdrop').classList.remove('hidden');
+  }
+
+  function closeAgentModal_() {
+    document.getElementById('agentModalBackdrop').classList.add('hidden');
+  }
+
+  function setTodayAsDefault_() {
+    var today = new Date();
+    var iso = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, '0'),
+      String(today.getDate()).padStart(2, '0')
+    ].join('-');
+
+    setFieldValue_('tanggal_kirim_rencana', iso);
+    setFieldValue_('subtotal', 0);
+    setFieldValue_('total', 0);
+    setFieldValue_('admin_tanggal_kirim_rencana', iso);
+    setFieldValue_('admin_subtotal', 0);
+    setFieldValue_('admin_total', 0);
+  }
+
+  function getSelectedCustomer_() {
+    var customerId = getFieldValue_('customer_id');
+    return appState.customers.find(function(customer) {
+      return customer.kode_customer === customerId;
+    }) || null;
+  }
+
+  function getSelectedAdminCustomer_() {
+    var customerId = getFieldValue_('admin_customer_id');
+    return appState.customers.find(function(customer) {
+      return customer.kode_customer === customerId;
+    }) || null;
+  }
+
+  function getJenisCustomer_() {
+    var selected = document.querySelector('input[name="jenis_customer"]:checked');
+    return selected ? selected.value : 'Lama';
+  }
+
+  function getAdminJenisCustomer_() {
+    var selected = document.querySelector('input[name="admin_jenis_customer"]:checked');
+    return selected ? selected.value : 'Lama';
+  }
+
+  function setFieldValue_(id, value) {
+    var el = document.getElementById(id);
+    if (el) el.value = value;
+  }
+
+  function getFieldValue_(id) {
+    var el = document.getElementById(id);
+    return el ? el.value : '';
+  }
+
+  function setText_(id, value) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = value;
+  }
+
+  function clearFieldText_(id) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = '';
+  }
+
+  function countNonEmptyKeys_(map) {
+    return Object.keys(map || {}).filter(function(key) {
+      return String(key || '').trim() !== '';
+    }).length;
+  }
+
+  function getTomorrowOutletKey_(row) {
+    var customerId = String(row.customer_id || '').trim();
+    var customerName = String(row.nama_customer_input || '').trim();
+    return customerId || customerName || String(row.no_so || '').trim();
+  }
+
+  function getTomorrowDisplayStatus_(row) {
+    var statusPembayaran = normalizeClientText_(row.status_pembayaran_customer);
+    var statusOrder = String(row.status_order || '').trim();
+
+    if (statusPembayaran === 'ditahan') {
+      return 'Ditahan';
+    }
+
+    return statusOrder || '-';
+  }
+
+  function buildTomorrowQtyLabel_(row) {
+    var qty = formatNumber_(row.qty || 0);
+    var unit = getProductUnitByName_(row.item);
+    return qty + (unit ? ' ' + unit : '');
+  }
+
+  function getProductUnitByName_(itemName) {
+    var product = (appState.products || []).find(function(row) {
+      return String(row.nama_item || '').trim() === String(itemName || '').trim();
+    });
+
+    return String(product && product.satuan ? product.satuan : '').trim();
+  }
+
+  function extractAreaLabel_(alamat) {
+    var text = String(alamat || '').trim();
+    var keywordMatch;
+
+    if (!text) {
+      return '-';
+    }
+
+    if (text.indexOf(',') !== -1) {
+      var parts = text.split(',').map(function(part) {
+        return String(part || '').trim();
+      }).filter(Boolean);
+
+      if (parts.length > 1) {
+        return parts[parts.length - 1];
+      }
+    }
+
+    keywordMatch = text.match(/(serang baru|cikarang|bekasi|karawang|tangerang|bogor|depok|bandung|jakarta|serang)/i);
+    if (keywordMatch) {
+      return toTitleCaseWords_(keywordMatch[0]);
+    }
+
+    return text;
+  }
+
+  function toTitleCaseWords_(text) {
+    return String(text || '').replace(/\b\w+/g, function(part) {
+      return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+    });
+  }
+
+  function normalizeClientText_(value) {
+    return String(value || '').trim().toLowerCase();
+  }
+
+  function escapeHtml_(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function escapeJs_(value) {
+    return String(value || '')
+      .replace(/\\/g, '\\\\')
+      .replace(/'/g, "\\'");
+  }
+
+  function formatNumber_(value) {
+    var number = Number(value || 0);
+    return number.toLocaleString('id-ID');
+  }
+
+  function formatCustomerMoney_(value) {
+    return Number(value || 0) > 0 ? formatNumber_(value) : '-';
+  }
+
+  function formatCustomerCount_(value) {
+    return Number(value || 0) > 0 ? String(value) : '-';
+  }
+
+  function formatCustomerDateValue_(value) {
+    return String(value || '').trim() || '-';
+  }
+
+  function buildApprovalRiskSummary_(row) {
+    var lines = [];
+    var totalTunggakan = Number(row.total_tunggakan || 0);
+    var jumlahNota = Number(row.jumlah_nota_overdue || 0);
+    var jatuhTempo = String(row.tanggal_jatuh_tempo_terdekat || '').trim();
+    var catatan = String(row.catatan_piutang || '').trim();
+
+    if (totalTunggakan > 0) {
+      lines.push('<div class="risk-line"><strong>Total:</strong> Rp ' + escapeHtml_(formatNumber_(totalTunggakan)) + '</div>');
+    }
+
+    if (jumlahNota > 0) {
+      lines.push('<div class="risk-line"><strong>Overdue:</strong> ' + escapeHtml_(String(jumlahNota)) + ' nota</div>');
+    }
+
+    if (jatuhTempo) {
+      lines.push('<div class="risk-line"><strong>JT:</strong> ' + escapeHtml_(jatuhTempo) + '</div>');
+    }
+
+    if (catatan) {
+      lines.push('<div class="risk-line"><strong>Catatan:</strong> ' + escapeHtml_(catatan) + '</div>');
+    }
+
+    if (!lines.length) {
+      return '<span>-</span>';
+    }
+
+    return '<div class="risk-summary">' + lines.join('') + '</div>';
+  }
+
+  function buildStatusBadge_(status) {
+    var text = String(status || '-');
+    var normalized = text.toLowerCase();
+    var className = 'ready';
+
+    if (normalized === 'menunggu persetujuan') {
+      className = 'warning';
+    } else if (normalized === 'ditahan' || normalized === 'ditolak') {
+      className = 'danger';
+    } else if (normalized === 'terkirim') {
+      className = 'progress';
+    } else if (normalized === 'selesai') {
+      className = 'done';
+    } else if (normalized === 'disetujui' || normalized === 'lancar') {
+      className = 'done';
+    }
+
+    return '<span class="status-badge ' + className + '">' + escapeHtml_(text) + '</span>';
+  }
+
+  function buildPaymentBadge_(status) {
+    var text = String(status || '-');
+    var normalized = text.toLowerCase();
+    var className = 'ready';
+
+    if (normalized === 'menunggak') {
+      className = 'warning';
+    } else if (normalized === 'ditahan') {
+      className = 'danger';
+    } else if (normalized === 'lancar') {
+      className = 'done';
+    }
+
+    return '<span class="status-badge ' + className + '">' + escapeHtml_(text) + '</span>';
+  }
+
+  function buildTomorrowPlanMessage_() {
+    var orders = appState.tomorrowOrders || [];
+    var planDateLabel = formatLongDateId_(appState.tomorrowPlanDate);
+    var rekapBarang = buildTomorrowItemSummary_(orders);
+    var outletCount = countTomorrowOutlets_(orders);
+
+    if (!orders.length) {
+      return 'Rencana kirim besok, ' + planDateLabel + '\nBelum ada data rencana kirim untuk besok.';
+    }
+
+    return [
+      'Rencana kirim besok, ' + planDateLabel,
+      'Total outlet: ' + outletCount,
+      'Total order: ' + orders.length,
+      '',
+      'Rekap barang:',
+      rekapBarang.join('\n'),
+      '',
+      'Detail outlet:',
+      buildTomorrowOutletLines_(orders).join('\n')
+    ].join('\n');
+  }
+
+  function buildTomorrowItemSummary_(orders) {
+    var grouped = {};
+
+    (orders || []).forEach(function(row) {
+      var key = String(row.item || '').trim();
+      var unit = getProductUnitByName_(row.item);
+
+      if (!key) {
+        return;
+      }
+
+      if (!grouped[key]) {
+        grouped[key] = {
+          qty: 0,
+          unit: unit
+        };
+      }
+
+      grouped[key].qty += Number(row.qty || 0);
+    });
+
+    return Object.keys(grouped).map(function(itemName) {
+      var item = grouped[itemName];
+      var qtyLabel = formatNumber_(item.qty);
+      return '- ' + itemName + ': ' + qtyLabel + (item.unit ? ' ' + item.unit : '');
+    });
+  }
+
+  function buildTomorrowOutletLines_(orders) {
+    return (orders || []).map(function(row, index) {
+      return [
+        (index + 1) + '. ' + String(row.nama_customer_input || '-').trim(),
+        String(row.item || '-').trim(),
+        buildTomorrowQtyLabel_(row),
+        extractAreaLabel_(row.alamat_kirim),
+        'status ' + getTomorrowDisplayStatus_(row)
+      ].join(', ');
+    });
+  }
+
+  function countTomorrowOutlets_(orders) {
+    var outletMap = {};
+
+    (orders || []).forEach(function(row) {
+      outletMap[getTomorrowOutletKey_(row)] = true;
+    });
+
+    return countNonEmptyKeys_(outletMap);
+  }
+
+  function formatLongDateId_(value) {
+    var parts = String(value || '').split('-');
+    var monthNames = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    var year = Number(parts[0] || 0);
+    var monthIndex = Number(parts[1] || 0) - 1;
+    var day = Number(parts[2] || 0);
+
+    if (!year || monthIndex < 0 || monthIndex > 11 || !day) {
+      return String(value || '-');
+    }
+
+    return day + ' ' + monthNames[monthIndex] + ' ' + year;
+  }
+
+  function copyTextToClipboard_(text, onSuccess, onFailure) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(onSuccess).catch(onFailure);
+      return;
+    }
+
+    var tempArea = document.createElement('textarea');
+    tempArea.value = text;
+    tempArea.setAttribute('readonly', 'readonly');
+    tempArea.style.position = 'fixed';
+    tempArea.style.top = '-9999px';
+    document.body.appendChild(tempArea);
+    tempArea.focus();
+    tempArea.select();
+
+    try {
+      document.execCommand('copy');
+      document.body.removeChild(tempArea);
+      onSuccess();
+    } catch (error) {
+      document.body.removeChild(tempArea);
+      onFailure(error);
+    }
+  }
+
+  function countDeliveryByStatus_(status) {
+    return appState.deliveryOrders.filter(function(row) {
+      return String(row.status_kirim || '').toLowerCase() === String(status || '').toLowerCase();
+    }).length;
+  }
+
+  function currentUserHasRole_(roleKey) {
+    return (appState.currentUser && appState.currentUser.role_key) === roleKey;
+  }
+
+  function canAccessTab_(tabName) {
+    var tabRoleMap = {
+      sales: 'sales',
+      approver: 'approver',
+      admin: 'cs_admin'
+    };
+
+    return currentUserHasRole_(tabRoleMap[tabName] || '');
+  }
+
+  function openPrintWindow_(data) {
+    var printWindow = window.open('', '_blank', 'width=900,height=700');
+
+    if (!printWindow) {
+      renderResult_('Popup print diblokir browser. Izinkan popup untuk webapp ini.', true);
+      return;
+    }
+
+    var printHtml = buildPrintDocument_(data);
+    printWindow.document.open();
+    printWindow.document.write(printHtml);
+    printWindow.document.close();
+  }
+
+  function buildPrintDocument_(data) {
+    var printConfig = window.APP_BOOTSTRAP.printConfig || {};
+    var title = 'Surat Jalan ' + escapeHtml_(data.no_surat_jalan || '');
+    var copyLabels = Array.isArray(printConfig.COPY_LABELS) ? printConfig.COPY_LABELS : ['Lembar Gudang', 'Lembar Customer'];
+    var copiesHtml = copyLabels.map(function(copyLabel, index) {
+      return buildDotMatrixCopy_(data, copyLabel, index < copyLabels.length - 1);
+    }).join('');
+
+    return '' +
+      '<!DOCTYPE html>' +
+      '<html>' +
+      '<head>' +
+        '<meta charset="utf-8" />' +
+        '<title>' + title + '</title>' +
+        '<style>' +
+          'body{font-family:' + escapeHtml_(printConfig.FONT_FAMILY || '"Courier New", monospace') + ';font-size:' + escapeHtml_(String(printConfig.FONT_SIZE_PX || 13)) + 'px;color:#111;margin:0;background:#fff;}' +
+          '.print-wrap{width:210mm;margin:0 auto;padding:8mm 8mm 12mm;}' +
+          '.copy-block{border:1px dashed #222;padding:6mm 5mm 7mm;margin:0 0 7mm;background:#fff;}' +
+          '.copy-block.last{margin-bottom:0;}' +
+          '.copy-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #222;padding-bottom:4mm;margin-bottom:4mm;gap:5mm;}' +
+          '.brand{display:flex;align-items:flex-start;gap:4mm;}' +
+          '.brand-logo{width:24mm;height:24mm;object-fit:contain;flex:0 0 auto;}' +
+          '.brand-title{font-size:20px;font-weight:bold;letter-spacing:0.4px;margin:0 0 2px;}' +
+          '.brand-subtitle{margin:0;font-size:12px;}' +
+          '.copy-label{text-align:right;font-size:12px;line-height:1.5;}' +
+          '.copy-label strong{display:block;font-size:16px;letter-spacing:1px;}' +
+          '.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:2mm 6mm;margin:0 0 4mm;}' +
+          '.meta-item{display:grid;grid-template-columns:34mm 1fr;gap:2mm;font-size:13px;line-height:1.45;}' +
+          '.full-row{grid-column:1 / -1;}' +
+          '.address-box,.note-box{border:1px solid #222;padding:3mm;min-height:16mm;white-space:pre-line;}' +
+          '.section-title{font-weight:bold;margin:0 0 2mm;font-size:12px;}' +
+          'table{width:100%;border-collapse:collapse;margin-top:3mm;}' +
+          'th,td{border:1px solid #222;padding:2.5mm;font-size:13px;text-align:left;vertical-align:top;}' +
+          'th{text-transform:uppercase;font-size:12px;letter-spacing:.4px;}' +
+          '.sign-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6mm;margin-top:9mm;}' +
+          '.sign-box{text-align:center;min-height:24mm;display:flex;flex-direction:column;justify-content:flex-end;}' +
+          '.sign-line{border-top:1px solid #222;padding-top:2mm;font-size:12px;}' +
+          '.tear-line{border-top:2px dashed #666;margin:7mm 0 0;padding-top:4mm;text-align:center;font-size:11px;letter-spacing:1px;}' +
+          '@page{size:' + escapeHtml_(String(printConfig.PAPER_WIDTH_MM || 241)) + 'mm ' + escapeHtml_(String(printConfig.PAPER_HEIGHT_MM || 279)) + 'mm;margin:6mm;}' +
+          '@media print{body{background:#fff}.print-wrap{width:auto;margin:0;padding:0}.copy-block{page-break-inside:avoid}button{display:none}}' +
+        '</style>' +
+      '</head>' +
+      '<body onload="window.print()">' +
+        '<div class="print-wrap">' +
+          copiesHtml +
+        '</div>' +
+      '</body>' +
+      '</html>';
+  }
+
+  function buildDotMatrixCopy_(data, copyLabel, withTearLine) {
+    return '' +
+      '<section class="copy-block' + (withTearLine ? '' : ' last') + '">' +
+        '<div class="copy-header">' +
+          '<div class="brand">' +
+            '<img class="brand-logo" src="' + escapeHtml_(window.APP_BOOTSTRAP.brandLogoDataUrl || '') + '" alt="ATS" />' +
+            '<div>' +
+              '<div class="brand-title">SURAT JALAN</div>' +
+              '<p class="brand-subtitle">PT Abuyamas Tirta Sejahtera</p>' +
+              '<p class="brand-subtitle">Dicetak dari webapp distribusi</p>' +
+            '</div>' +
+          '</div>' +
+          '<div class="copy-label">' +
+            '<div>' + escapeHtml_(copyLabel || '') + '</div>' +
+            '<strong>' + escapeHtml_(data.no_surat_jalan || '-') + '</strong>' +
+            '<div>Tanggal Kirim: ' + escapeHtml_(data.tanggal_kirim || '-') + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="meta-grid">' +
+          buildPrintMetaItem_('No SO', data.no_so) +
+          buildPrintMetaItem_('Sales', data.sales_nama) +
+          buildPrintMetaItem_('Customer', data.nama_customer) +
+          buildPrintMetaItem_('Kode Customer', data.customer_id) +
+          buildPrintMetaItem_('PIC Customer', data.pic_customer) +
+          buildPrintMetaItem_('No. HP', data.no_hp_customer) +
+          buildPrintMetaItem_('Driver', data.driver) +
+          buildPrintMetaItem_('Armada', data.armada) +
+          buildPrintMetaItem_('Term Pembayaran', data.term_pembayaran) +
+          buildPrintMetaItem_('Total Order', formatNumber_(data.total || 0)) +
+          '<div class="full-row">' +
+            '<div class="section-title">Alamat Kirim</div>' +
+            '<div class="address-box">' + escapeHtml_(data.alamat_kirim || '-') + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="section-title">Detail Barang</div>' +
+        '<table>' +
+          '<thead>' +
+            '<tr>' +
+              '<th style="width:14mm;">No</th>' +
+              '<th>Nama Barang</th>' +
+              '<th style="width:28mm;">Qty</th>' +
+            '</tr>' +
+          '</thead>' +
+          '<tbody>' +
+            '<tr>' +
+              '<td>1</td>' +
+              '<td>' + escapeHtml_(data.item || '-') + '</td>' +
+              '<td>' + escapeHtml_(String(data.qty || '-')) + '</td>' +
+            '</tr>' +
+            '<tr><td>&nbsp;</td><td></td><td></td></tr>' +
+            '<tr><td>&nbsp;</td><td></td><td></td></tr>' +
+          '</tbody>' +
+        '</table>' +
+        '<div style="margin-top:4mm;">' +
+          '<div class="section-title">Catatan</div>' +
+          '<div class="note-box">' + escapeHtml_(joinPrintValues_(data.catatan_order, data.catatan_kirim, ' | ') || '-') + '</div>' +
+        '</div>' +
+        '<div class="sign-grid">' +
+          buildPrintSignBox_('Pengirim') +
+          buildPrintSignBox_('Penerima') +
+          buildPrintSignBox_('Admin') +
+        '</div>' +
+        (withTearLine ? '<div class="tear-line">------------------------------ SOBEK DI SINI ------------------------------</div>' : '') +
+      '</section>';
+  }
+
+  function buildPrintMetaItem_(label, value) {
+    return '' +
+      '<div class="meta-item">' +
+        '<div>' + escapeHtml_(label) + '</div>' +
+        '<div>: ' + escapeHtml_(value || '-') + '</div>' +
+      '</div>';
+  }
+
+  function buildPrintSignBox_(label) {
+    return '' +
+      '<div class="sign-box">' +
+        '<div class="sign-line">' + escapeHtml_(label) + '</div>' +
+      '</div>';
+  }
+
+  function joinPrintValues_(firstValue, secondValue, separator) {
+    var values = [firstValue, secondValue].filter(function(value) {
+      return String(value || '').trim() !== '';
+    });
+
+    return values.join(separator || ' ');
+  }
+</script>

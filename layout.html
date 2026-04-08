@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <?!= include('main.css'); ?>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="page-card">
+        <header class="page-header">
+          <div class="brand-block">
+            <img
+              class="brand-logo"
+              src="data:image/webp;base64,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"
+              alt="Logo ATS"
+            />
+            <div>
+              <p class="eyebrow">MVP Operasional</p>
+              <h1>Sales Management</h1>
+              <p class="lead">
+                Sales input order, approver memutuskan pengecualian, dan CS/Admin memproses surat jalan dalam satu webapp.
+              </p>
+            </div>
+          </div>
+
+          <aside class="status-box" id="statusBox">
+            <strong>Status</strong>
+            <span id="statusText">Siap dipakai</span>
+            <small id="userSummary">Memeriksa user login...</small>
+          </aside>
+        </header>
+
+        <nav class="app-tabs">
+          <button type="button" class="tab-btn active" data-tab="sales" data-role="sales">Sales Order</button>
+          <button type="button" class="tab-btn" data-tab="approver" data-role="approver">Approver</button>
+          <button type="button" class="tab-btn" data-tab="admin" data-role="cs_admin">CS/Admin</button>
+        </nav>
+
+        <section class="auth-notice hidden" id="authNotice">
+          <h2>Akses Belum Aktif</h2>
+          <p id="authNoticeText">Email login Anda belum memiliki otorisasi di webapp ini.</p>
+        </section>
+
+        <section class="tab-panel active" id="tab-sales" data-role="sales">
+          <form id="salesOrderForm" class="order-form">
+            <section class="form-card">
+              <h2>Info Sales</h2>
+              <div class="form-grid">
+                <label class="field">
+                  <span>Sales</span>
+                  <select id="sales_id" name="sales_id" required></select>
+                </label>
+                <label class="field">
+                  <span>Nama Sales</span>
+                  <input id="sales_nama" name="sales_nama" type="text" readonly />
+                </label>
+              </div>
+            </section>
+
+            <section class="form-card">
+              <h2>Jenis Customer</h2>
+              <div class="radio-row">
+                <label class="radio-pill">
+                  <input type="radio" name="jenis_customer" value="Lama" checked />
+                  <span>Customer Lama</span>
+                </label>
+                <label class="radio-pill">
+                  <input type="radio" name="jenis_customer" value="Baru" />
+                  <span>Customer Baru</span>
+                </label>
+              </div>
+
+              <div id="customerLamaSection" class="stack">
+                <label class="field">
+                  <span>Pilih Customer</span>
+                  <select id="customer_id" name="customer_id"></select>
+                </label>
+                <div class="customer-info" id="customerInfo">
+                  <div><strong>Status Customer:</strong> <span id="infoStatusCustomer">-</span></div>
+                  <div><strong>Status Pembayaran:</strong> <span id="infoStatusPembayaran">-</span></div>
+                  <div><strong>Total Tunggakan:</strong> <span id="infoTotalTunggakan">-</span></div>
+                  <div><strong>Nota Overdue:</strong> <span id="infoNotaOverdue">-</span></div>
+                  <div><strong>JT Terdekat:</strong> <span id="infoJatuhTempo">-</span></div>
+                  <div><strong>Alamat:</strong> <span id="infoAlamat">-</span></div>
+                  <div><strong>PIC:</strong> <span id="infoPic">-</span></div>
+                  <div><strong>No. HP:</strong> <span id="infoHp">-</span></div>
+                  <div><strong>Catatan Piutang:</strong> <span id="infoCatatanPiutang">-</span></div>
+                </div>
+              </div>
+
+              <div id="customerBaruSection" class="stack hidden">
+                <div class="form-grid">
+                  <label class="field">
+                    <span>Nama Customer</span>
+                    <input id="nama_customer_input" name="nama_customer_input" type="text" />
+                  </label>
+                  <label class="field">
+                    <span>PIC Customer</span>
+                    <input id="pic_customer" name="pic_customer" type="text" />
+                  </label>
+                </div>
+
+                <div class="form-grid">
+                  <label class="field field-wide">
+                    <span>Alamat Kirim</span>
+                    <textarea id="alamat_kirim" name="alamat_kirim" rows="3"></textarea>
+                  </label>
+                  <label class="field">
+                    <span>No. HP Customer</span>
+                    <input id="no_hp_customer" name="no_hp_customer" type="text" />
+                  </label>
+                </div>
+
+                <div class="form-grid">
+                  <label class="field field-wide">
+                    <span>Link Google Maps</span>
+                    <input id="link_google_maps" name="link_google_maps" type="text" placeholder="Tempel link Google Maps jika ada" />
+                  </label>
+                </div>
+
+                <div class="form-grid">
+                  <label class="field">
+                    <span>Latitude</span>
+                    <input id="latitude" name="latitude" type="text" placeholder="-6.200000" />
+                  </label>
+                  <label class="field">
+                    <span>Longitude</span>
+                    <input id="longitude" name="longitude" type="text" placeholder="106.816666" />
+                  </label>
+                </div>
+              </div>
+            </section>
+
+            <section class="form-card">
+              <h2>Detail Order</h2>
+              <div class="form-grid">
+                <label class="field field-wide">
+                  <span>Produk</span>
+                  <select id="item" name="item" required></select>
+                </label>
+                <label class="field">
+                  <span>Qty</span>
+                  <input id="qty" name="qty" type="number" min="1" step="1" required />
+                </label>
+                <label class="field">
+                  <span>Harga</span>
+                  <input id="harga" name="harga" type="number" min="0" step="1" required />
+                </label>
+                <label class="field">
+                  <span>Diskon</span>
+                  <input id="diskon" name="diskon" type="number" min="0" step="1" value="0" />
+                </label>
+                <label class="field">
+                  <span>Subtotal</span>
+                  <input id="subtotal" name="subtotal" type="number" readonly />
+                </label>
+                <label class="field">
+                  <span>Total</span>
+                  <input id="total" name="total" type="number" readonly />
+                </label>
+              </div>
+            </section>
+
+            <section class="form-card">
+              <h2>Pengiriman dan Pembayaran</h2>
+              <div class="form-grid">
+                <label class="field">
+                  <span>Tanggal Kirim Rencana</span>
+                  <input id="tanggal_kirim_rencana" name="tanggal_kirim_rencana" type="date" required />
+                </label>
+                <label class="field">
+                  <span>Term Pembayaran</span>
+                  <select id="term_pembayaran" name="term_pembayaran" required>
+                    <option value="Cash">Cash</option>
+                    <option value="Tempo 7 Hari">Tempo 7 Hari</option>
+                    <option value="Tempo 14 Hari">Tempo 14 Hari</option>
+                    <option value="Tempo 30 Hari">Tempo 30 Hari</option>
+                  </select>
+                </label>
+                <label class="field field-wide">
+                  <span>Catatan</span>
+                  <textarea id="catatan" name="catatan" rows="3" placeholder="Catatan tambahan untuk admin atau pengiriman"></textarea>
+                </label>
+              </div>
+            </section>
+
+            <section class="result-card" id="resultCard">
+              <h2>Hasil Submit</h2>
+              <div id="resultContent">Belum ada order yang dikirim.</div>
+            </section>
+
+            <div class="action-row">
+              <button type="button" class="ghost-btn" id="resetBtn">Reset</button>
+              <button type="submit" class="primary-btn" id="submitBtn">Submit Sales Order</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="tab-panel" id="tab-approver" data-role="approver">
+          <section class="form-card">
+            <div class="panel-header">
+              <div>
+                <h2>Approval Order</h2>
+                <p class="panel-subtitle">Daftar order yang membutuhkan persetujuan karena tunggakan atau pengecualian.</p>
+              </div>
+              <button type="button" class="ghost-btn" id="refreshApproverBtn">Refresh</button>
+            </div>
+
+            <div class="form-grid">
+              <label class="field">
+                <span>Approver</span>
+                <select id="approver_id"></select>
+              </label>
+            </div>
+
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>No SO</th>
+                    <th>Customer</th>
+                    <th>Item</th>
+                    <th>Status Bayar</th>
+                    <th>Tunggakan</th>
+                    <th>Total</th>
+                    <th>Alasan</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="approverTableBody">
+                  <tr><td colspan="8" class="empty-cell">Belum ada data approval.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section class="tab-panel" id="tab-admin" data-role="cs_admin">
+          <section class="form-card">
+            <div class="panel-header">
+              <div>
+                <h2>CS/Admin</h2>
+                <p class="panel-subtitle">Kelola order siap kirim, buat surat jalan, dan update status pengiriman.</p>
+              </div>
+              <div class="inline-actions">
+                <button type="button" class="primary-btn" id="openAgentModalBtn">Input Pengiriman Agen</button>
+                <button type="button" class="ghost-btn" id="refreshAdminBtn">Refresh</button>
+              </div>
+            </div>
+
+            <div class="summary-grid">
+              <article class="summary-card">
+                <span class="summary-label">Order Siap Kirim</span>
+                <strong class="summary-value" id="summaryReadyOrders">0</strong>
+                <span class="summary-note">Menunggu dibuat surat jalan</span>
+              </article>
+              <article class="summary-card">
+                <span class="summary-label">SJ Siap Kirim</span>
+                <strong class="summary-value" id="summaryDeliveryReady">0</strong>
+                <span class="summary-note">Sudah dibuat, belum berangkat</span>
+              </article>
+              <article class="summary-card">
+                <span class="summary-label">SJ Terkirim</span>
+                <strong class="summary-value" id="summaryDelivered">0</strong>
+                <span class="summary-note">Menunggu penyelesaian admin</span>
+              </article>
+              <article class="summary-card">
+                <span class="summary-label">SJ Selesai</span>
+                <strong class="summary-value" id="summaryCompleted">0</strong>
+                <span class="summary-note">Sudah selesai diproses</span>
+              </article>
+            </div>
+
+            <section class="plan-card">
+              <div class="panel-header">
+                <div>
+                  <h3 class="section-title compact">Rencana Kirim Besok</h3>
+                  <p class="panel-subtitle">Rekap H-1 untuk dibagikan oleh CS ke grup delivery.</p>
+                </div>
+                <div class="inline-actions">
+                  <button type="button" class="ghost-btn" id="generateTomorrowPlanBtn">Generate Rekap</button>
+                  <button type="button" class="primary-btn" id="copyTomorrowPlanBtn" disabled>Copy Format Grup</button>
+                </div>
+              </div>
+
+              <div class="summary-grid plan-summary-grid">
+                <article class="summary-card">
+                  <span class="summary-label">Outlet Besok</span>
+                  <strong class="summary-value" id="summaryTomorrowOutlets">0</strong>
+                  <span class="summary-note">Outlet unik yang masuk rencana kirim H+1</span>
+                </article>
+                <article class="summary-card">
+                  <span class="summary-label">Order Besok</span>
+                  <strong class="summary-value" id="summaryTomorrowOrders">0</strong>
+                  <span class="summary-note">Total sales order bertanggal kirim besok</span>
+                </article>
+                <article class="summary-card">
+                  <span class="summary-label">Jenis Barang</span>
+                  <strong class="summary-value" id="summaryTomorrowItems">0</strong>
+                  <span class="summary-note">Jumlah item unik di rekap barang</span>
+                </article>
+              </div>
+
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>No SO</th>
+                      <th>Customer</th>
+                      <th>Item</th>
+                      <th>Qty</th>
+                      <th>Area</th>
+                      <th>Status</th>
+                      <th>Sales</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tomorrowPlanTableBody">
+                    <tr><td colspan="7" class="empty-cell">Belum ada rencana kirim untuk besok.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <label class="field plan-output-field">
+                <span>Preview Format Grup Delivery</span>
+                <textarea id="tomorrowPlanOutput" rows="10" readonly placeholder="Klik Generate Rekap untuk menyiapkan format share ke grup delivery."></textarea>
+              </label>
+            </section>
+
+            <h3 class="section-title">Order Siap Kirim</h3>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>No SO</th>
+                    <th>Customer</th>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>Status</th>
+                    <th>Total</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="readyOrderTableBody">
+                  <tr><td colspan="7" class="empty-cell">Belum ada order siap kirim.</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3 class="section-title">Surat Jalan</h3>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>No SJ</th>
+                    <th>No SO</th>
+                    <th>Customer</th>
+                    <th>Status</th>
+                    <th>Driver</th>
+                    <th>Armada</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="deliveryTableBody">
+                  <tr><td colspan="7" class="empty-cell">Belum ada surat jalan.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <div class="modal-backdrop hidden" id="agentModalBackdrop">
+      <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="agentModalTitle">
+        <div class="panel-header">
+          <div>
+            <h2 id="agentModalTitle">Input Pengiriman Agen</h2>
+            <p class="panel-subtitle">Dipakai CS/Admin untuk order agen yang masuk langsung ke kantor.</p>
+          </div>
+          <button type="button" class="ghost-btn" id="closeAgentModalBtn">Tutup</button>
+        </div>
+
+        <form id="agentOrderForm" class="order-form">
+          <div class="radio-row">
+            <label class="radio-pill">
+              <input type="radio" name="admin_jenis_customer" value="Lama" checked />
+              <span>Agen Lama</span>
+            </label>
+            <label class="radio-pill">
+              <input type="radio" name="admin_jenis_customer" value="Baru" />
+              <span>Agen Baru</span>
+            </label>
+          </div>
+
+          <div id="adminCustomerLamaSection" class="stack">
+            <label class="field">
+              <span>Pilih Agen / Customer</span>
+              <select id="admin_customer_id" name="admin_customer_id"></select>
+            </label>
+            <div class="customer-info">
+              <div><strong>Status Customer:</strong> <span id="adminInfoStatusCustomer">-</span></div>
+              <div><strong>Status Pembayaran:</strong> <span id="adminInfoStatusPembayaran">-</span></div>
+              <div><strong>Total Tunggakan:</strong> <span id="adminInfoTotalTunggakan">-</span></div>
+              <div><strong>Nota Overdue:</strong> <span id="adminInfoNotaOverdue">-</span></div>
+              <div><strong>JT Terdekat:</strong> <span id="adminInfoJatuhTempo">-</span></div>
+              <div><strong>Alamat:</strong> <span id="adminInfoAlamat">-</span></div>
+              <div><strong>PIC:</strong> <span id="adminInfoPic">-</span></div>
+              <div><strong>No. HP:</strong> <span id="adminInfoHp">-</span></div>
+              <div><strong>Catatan Piutang:</strong> <span id="adminInfoCatatanPiutang">-</span></div>
+            </div>
+          </div>
+
+          <div id="adminCustomerBaruSection" class="stack hidden">
+            <div class="form-grid">
+              <label class="field">
+                <span>Nama Agen / Customer</span>
+                <input id="admin_nama_customer_input" name="admin_nama_customer_input" type="text" />
+              </label>
+              <label class="field">
+                <span>PIC Customer</span>
+                <input id="admin_pic_customer" name="admin_pic_customer" type="text" />
+              </label>
+            </div>
+
+            <div class="form-grid">
+              <label class="field field-wide">
+                <span>Alamat Kirim</span>
+                <textarea id="admin_alamat_kirim" name="admin_alamat_kirim" rows="3"></textarea>
+              </label>
+              <label class="field">
+                <span>No. HP Customer</span>
+                <input id="admin_no_hp_customer" name="admin_no_hp_customer" type="text" />
+              </label>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <label class="field field-wide">
+              <span>Produk</span>
+              <select id="admin_item" name="admin_item"></select>
+            </label>
+            <label class="field">
+              <span>Qty</span>
+              <input id="admin_qty" name="admin_qty" type="number" min="1" step="1" />
+            </label>
+            <label class="field">
+              <span>Harga</span>
+              <input id="admin_harga" name="admin_harga" type="number" min="0" step="1" />
+            </label>
+            <label class="field">
+              <span>Diskon</span>
+              <input id="admin_diskon" name="admin_diskon" type="number" min="0" step="1" value="0" />
+            </label>
+            <label class="field">
+              <span>Subtotal</span>
+              <input id="admin_subtotal" name="admin_subtotal" type="number" readonly />
+            </label>
+            <label class="field">
+              <span>Total</span>
+              <input id="admin_total" name="admin_total" type="number" readonly />
+            </label>
+          </div>
+
+          <div class="form-grid">
+            <label class="field">
+              <span>Tanggal Kirim Rencana</span>
+              <input id="admin_tanggal_kirim_rencana" name="admin_tanggal_kirim_rencana" type="date" />
+            </label>
+            <label class="field">
+              <span>Term Pembayaran</span>
+              <select id="admin_term_pembayaran" name="admin_term_pembayaran">
+                <option value="Cash">Cash</option>
+                <option value="Tempo 7 Hari">Tempo 7 Hari</option>
+                <option value="Tempo 14 Hari">Tempo 14 Hari</option>
+                <option value="Tempo 30 Hari">Tempo 30 Hari</option>
+              </select>
+            </label>
+            <label class="field field-wide">
+              <span>Catatan</span>
+              <textarea id="admin_catatan" name="admin_catatan" rows="2" placeholder="Catatan order agen dari CS/Admin"></textarea>
+            </label>
+          </div>
+
+          <div class="action-row">
+            <button type="button" class="ghost-btn" id="resetAgentBtn">Reset Form Agen</button>
+            <button type="submit" class="primary-btn" id="submitAgentBtn">Submit Pengiriman Agen</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <?!= include('main.js'); ?>
+  </body>
+</html>
