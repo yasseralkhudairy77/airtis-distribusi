@@ -39,7 +39,7 @@
         <section class="auth-notice" id="authNotice">
           <h2>Akses Belum Aktif</h2>
           <p id="authNoticeText">Email login Anda belum memiliki otorisasi di webapp ini.</p>
-          <form id="loginForm" class="login-form">
+          <form id="loginForm" class="login-form" onsubmit="return false;">
             <label class="field">
               <span>User ID</span>
               <input id="login_user_id" type="text" autocomplete="username" />
@@ -51,7 +51,7 @@
         </section>
 
         <section class="tab-panel hidden" id="tab-sales" data-role="sales">
-          <form id="salesOrderForm" class="order-form">
+          <form id="salesOrderForm" class="order-form" onsubmit="return false;">
             <section class="form-card">
               <h2>Info Sales</h2>
               <div class="form-grid">
@@ -389,7 +389,7 @@
           <button type="button" class="ghost-btn" id="closeAgentModalBtn">Tutup</button>
         </div>
 
-        <form id="agentOrderForm" class="order-form">
+        <form id="agentOrderForm" class="order-form" onsubmit="return false;">
           <div class="radio-row">
             <label class="radio-pill">
               <input type="radio" name="admin_jenis_customer" value="Lama" checked />
