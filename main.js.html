@@ -2006,38 +2006,43 @@
         '<meta charset="utf-8" />' +
         '<title>' + title + '</title>' +
         '<style>' +
-          'body{font-family:' + escapeHtml_(printConfig.FONT_FAMILY || '"Courier New", monospace') + ';font-size:10px;color:#111;margin:0;background:#fff;}' +
-          '.print-wrap{width:' + escapeHtml_(String(printConfig.PAPER_WIDTH_MM || 210)) + 'mm;margin:0 auto;padding:3mm 3mm 4mm;}' +
-          '.sheet-block{border:1px dashed #222;padding:2.5mm 2.5mm 3mm;background:#fff;}' +
-          '.doc-section{margin:0 0 2.5mm;}' +
+          '*{box-sizing:border-box;}' +
+          'body{font-family:' + escapeHtml_(printConfig.FONT_FAMILY || '"Courier New", monospace') + ';font-size:10.2px;color:#111;margin:0;background:#fff;}' +
+          '.print-wrap{width:' + escapeHtml_(String(printConfig.PAPER_WIDTH_MM || 210)) + 'mm;margin:0 auto;padding:2.5mm;}' +
+          '.sheet-block{height:284mm;border:1px dashed #222;padding:3mm;background:#fff;display:grid;grid-template-rows:minmax(0,1fr) auto minmax(0,1fr);gap:2mm;overflow:hidden;}' +
+          '.doc-section{min-height:0;display:flex;flex-direction:column;justify-content:space-between;}' +
           '.doc-section.last{margin-bottom:0;}' +
-          '.copy-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #222;padding-bottom:2mm;margin-bottom:2mm;gap:3mm;}' +
+          '.doc-content{display:grid;gap:1.5mm;}' +
+          '.doc-footer{display:grid;gap:1.5mm;}' +
+          '.copy-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #222;padding-bottom:1.6mm;margin-bottom:1.6mm;gap:3mm;}' +
           '.brand{display:flex;align-items:flex-start;gap:3mm;}' +
-          '.brand-logo{width:13mm;height:13mm;object-fit:contain;flex:0 0 auto;}' +
-          '.brand-title{font-size:13px;font-weight:bold;letter-spacing:0.3px;margin:0 0 .5mm;}' +
-          '.brand-subtitle{margin:0;font-size:8.5px;line-height:1.15;}' +
-          '.doc-title{text-align:right;font-size:8.5px;line-height:1.15;}' +
-          '.doc-title strong{display:block;font-size:13px;letter-spacing:.6px;}' +
-          '.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:1mm 4mm;margin:0 0 2mm;}' +
-          '.meta-item{display:grid;grid-template-columns:19mm 1fr;gap:1.5mm;font-size:9px;line-height:1.15;}' +
+          '.brand-logo{width:14mm;height:14mm;object-fit:contain;flex:0 0 auto;}' +
+          '.brand-title{font-size:13.2px;font-weight:bold;letter-spacing:0.2px;margin:0 0 .4mm;}' +
+          '.brand-subtitle{margin:0;font-size:8.4px;line-height:1.12;}' +
+          '.doc-title{text-align:right;font-size:8.4px;line-height:1.1;}' +
+          '.doc-title strong{display:block;font-size:13.2px;letter-spacing:.5px;}' +
+          '.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:1mm 3.5mm;margin:0;}' +
+          '.meta-item{display:grid;grid-template-columns:18mm 1fr;gap:1.2mm;font-size:8.8px;line-height:1.12;}' +
           '.full-row{grid-column:1 / -1;}' +
-          '.address-box,.note-box{border:1px solid #222;padding:1.2mm;min-height:6mm;white-space:pre-line;font-size:8.5px;line-height:1.15;}' +
-          '.section-title{font-weight:bold;margin:0 0 1mm;font-size:9px;}' +
-          'table{width:100%;border-collapse:collapse;margin-top:1mm;}' +
-          'th,td{border:1px solid #222;padding:1mm 1.2mm;font-size:8.5px;text-align:left;vertical-align:top;line-height:1.1;}' +
-          'th{text-transform:uppercase;font-size:7.8px;letter-spacing:.2px;}' +
-          '.section-gap{margin-top:1.8mm;}' +
-          '.sign-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3mm;margin-top:3mm;}' +
-          '.sign-box{text-align:center;min-height:11mm;display:flex;flex-direction:column;justify-content:flex-end;}' +
-          '.sign-line{border-top:1px solid #222;padding-top:1mm;font-size:8px;}' +
-          '.tear-line{border-top:2px dashed #666;margin:2mm 0;padding-top:1mm;text-align:center;font-size:8px;letter-spacing:.4px;}' +
-          '.nota-grid{display:grid;grid-template-columns:1.2fr 0.9fr;gap:3mm;margin-top:2mm;}' +
-          '.summary-box{border:1px solid #222;padding:1.2mm;display:grid;gap:.5mm;}' +
-          '.summary-row{display:grid;grid-template-columns:1fr auto;gap:2mm;font-size:8.5px;}' +
-          '.summary-row strong{font-size:9px;}' +
-          '.terbilang-box{border:1px solid #222;padding:1.2mm;min-height:9mm;font-size:8.5px;line-height:1.15;}' +
-          '.nota-note-list{margin:0;padding-left:3mm;display:grid;gap:.5mm;font-size:8.5px;line-height:1.15;}' +
-          '@page{size:' + escapeHtml_(String(printConfig.PAPER_WIDTH_MM || 210)) + 'mm ' + escapeHtml_(String(printConfig.PAPER_HEIGHT_MM || 297)) + 'mm;margin:2.5mm;}' +
+          '.address-box,.note-box{border:1px solid #222;padding:1.2mm;white-space:pre-line;font-size:8.4px;line-height:1.12;}' +
+          '.address-box{min-height:8mm;}' +
+          '.note-box{min-height:9mm;}' +
+          '.section-title{font-weight:bold;margin:0 0 .8mm;font-size:8.8px;}' +
+          'table{width:100%;border-collapse:collapse;margin-top:.8mm;table-layout:fixed;}' +
+          'th,td{border:1px solid #222;padding:.9mm 1.1mm;font-size:8.3px;text-align:left;vertical-align:top;line-height:1.08;}' +
+          'th{text-transform:uppercase;font-size:7.6px;letter-spacing:.15px;}' +
+          '.section-gap{margin-top:1.2mm;}' +
+          '.sign-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3mm;margin-top:1.6mm;}' +
+          '.sign-box{text-align:center;min-height:13mm;display:flex;flex-direction:column;justify-content:flex-end;}' +
+          '.sign-line{border-top:1px solid #222;padding-top:.8mm;font-size:7.8px;}' +
+          '.tear-line{border-top:2px dashed #666;padding-top:1mm;text-align:center;font-size:7.6px;letter-spacing:.35px;}' +
+          '.nota-grid{display:grid;grid-template-columns:1.18fr .82fr;gap:3mm;align-items:stretch;}' +
+          '.summary-box{border:1px solid #222;padding:1.2mm;display:grid;gap:.7mm;align-content:start;}' +
+          '.summary-row{display:grid;grid-template-columns:1fr auto;gap:2mm;font-size:8.4px;}' +
+          '.summary-row strong{font-size:8.8px;}' +
+          '.terbilang-box{border:1px solid #222;padding:1.2mm;min-height:12mm;font-size:8.4px;line-height:1.12;}' +
+          '.nota-note-list{margin:0;padding-left:3mm;display:grid;gap:.6mm;font-size:8.4px;line-height:1.12;}' +
+          '@page{size:' + escapeHtml_(String(printConfig.PAPER_WIDTH_MM || 210)) + 'mm ' + escapeHtml_(String(printConfig.PAPER_HEIGHT_MM || 297)) + 'mm;margin:2mm;}' +
           '@media print{body{background:#fff}.print-wrap{width:auto;margin:0;padding:0}.sheet-block{page-break-inside:avoid}button{display:none}}' +
         '</style>' +
       '</head>' +
@@ -2077,40 +2082,46 @@
             '<strong>' + escapeHtml_(data.no_surat_jalan || '-') + '</strong>' +
           '</div>' +
         '</div>' +
-        '<div class="meta-grid">' +
-          buildPrintMetaItem_('Tanggal', formatPrintDate_(data.tanggal_kirim || data.tanggal_cetak || '')) +
-          buildPrintMetaItem_('No. SJ', data.no_surat_jalan) +
-          buildPrintMetaItem_('No SO', data.no_so) +
-          buildPrintMetaItem_('No. Nota', data.no_so) +
-          buildPrintMetaItem_('Customer', data.nama_customer) +
-          buildPrintMetaItem_('PIC / HP', joinPrintValues_(data.pic_customer, data.no_hp_customer, ' / ')) +
-          '<div class="full-row">' +
-            '<div class="section-title">Alamat</div>' +
-            '<div class="address-box">' + escapeHtml_(data.alamat_kirim || '-') + '</div>' +
+        '<div class="doc-content">' +
+          '<div class="meta-grid">' +
+            buildPrintMetaItem_('Tanggal', formatPrintDate_(data.tanggal_kirim || data.tanggal_cetak || '')) +
+            buildPrintMetaItem_('No. SJ', data.no_surat_jalan) +
+            buildPrintMetaItem_('No SO', data.no_so) +
+            buildPrintMetaItem_('No. Nota', data.no_so) +
+            buildPrintMetaItem_('Customer', data.nama_customer) +
+            buildPrintMetaItem_('PIC / HP', joinPrintValues_(data.pic_customer, data.no_hp_customer, ' / ')) +
+            '<div class="full-row">' +
+              '<div class="section-title">Alamat</div>' +
+              '<div class="address-box">' + escapeHtml_(data.alamat_kirim || '-') + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div>' +
+            '<div class="section-title">Detail Barang</div>' +
+            '<table>' +
+              '<thead>' +
+                '<tr>' +
+                  '<th style="width:14mm;">No</th>' +
+                  '<th>Deskripsi Barang</th>' +
+                  '<th style="width:18mm;">Qty</th>' +
+                  '<th style="width:16mm;">Sat</th>' +
+                  '<th style="width:30mm;">Ket.</th>' +
+                '</tr>' +
+              '</thead>' +
+              '<tbody>' + detailRows + '</tbody>' +
+            '</table>' +
           '</div>' +
         '</div>' +
-        '<div class="section-title">Detail Barang</div>' +
-        '<table>' +
-          '<thead>' +
-            '<tr>' +
-              '<th style="width:14mm;">No</th>' +
-              '<th>Deskripsi Barang</th>' +
-              '<th style="width:18mm;">Qty</th>' +
-              '<th style="width:16mm;">Sat</th>' +
-              '<th style="width:30mm;">Ket.</th>' +
-            '</tr>' +
-          '</thead>' +
-          '<tbody>' + detailRows + '</tbody>' +
-        '</table>' +
-        '<div class="section-gap">' +
-          '<div class="section-title">Catatan</div>' +
-          '<div class="note-box">' + escapeHtml_(buildSuratJalanNotes_(data) || '-') + '</div>' +
-        '</div>' +
-        '<div class="sign-grid">' +
-          buildPrintSignBox_('Penerima') +
-          buildPrintSignBox_('Gudang') +
-          buildPrintSignBox_('Admin') +
-          buildPrintSignBox_('Security') +
+        '<div class="doc-footer">' +
+          '<div>' +
+            '<div class="section-title">Catatan</div>' +
+            '<div class="note-box">' + escapeHtml_(buildSuratJalanNotes_(data) || '-') + '</div>' +
+          '</div>' +
+          '<div class="sign-grid">' +
+            buildPrintSignBox_('Penerima') +
+            buildPrintSignBox_('Gudang') +
+            buildPrintSignBox_('Admin') +
+            buildPrintSignBox_('Security') +
+          '</div>' +
         '</div>' +
       '</section>';
   }
@@ -2137,56 +2148,62 @@
             '<strong>' + escapeHtml_(data.no_so || '-') + '</strong>' +
           '</div>' +
         '</div>' +
-        '<div class="meta-grid">' +
-          buildPrintMetaItem_('Tanggal', formatPrintDate_(data.tanggal_kirim || data.tanggal_cetak || '')) +
-          buildPrintMetaItem_('No. SJ', data.no_surat_jalan) +
-          buildPrintMetaItem_('No. Nota', data.no_so) +
-          buildPrintMetaItem_('Term Bayar', data.term_pembayaran) +
-          buildPrintMetaItem_('Customer', data.nama_customer) +
-          buildPrintMetaItem_('Sales', data.sales_nama) +
-          '<div class="full-row">' +
-            '<div class="section-title">Alamat</div>' +
-            '<div class="address-box">' + escapeHtml_(data.alamat_kirim || '-') + '</div>' +
-          '</div>' +
-        '</div>' +
-        '<table>' +
-          '<thead>' +
-            '<tr>' +
-              '<th style="width:12mm;">No</th>' +
-              '<th>Barang</th>' +
-              '<th style="width:16mm;">Qty</th>' +
-              '<th style="width:14mm;">Sat</th>' +
-              '<th style="width:24mm;">Harga</th>' +
-              '<th style="width:20mm;">Diskon</th>' +
-              '<th style="width:28mm;">Jumlah</th>' +
-            '</tr>' +
-          '</thead>' +
-          '<tbody>' + detailRows + '</tbody>' +
-        '</table>' +
-        '<div class="nota-grid">' +
-          '<div>' +
-            '<div class="section-title">Catatan Nota</div>' +
-            '<div class="note-box">' +
-              '<ul class="nota-note-list">' +
-                '<li>Periksa barang saat diterima.</li>' +
-                '<li>Pembayaran mengikuti term: ' + escapeHtml_(data.term_pembayaran || '-') + '.</li>' +
-                '<li>Catatan order: ' + escapeHtml_(joinPrintValues_(data.catatan_order, data.catatan_kirim, ' | ') || '-') + '</li>' +
-              '</ul>' +
+        '<div class="doc-content">' +
+          '<div class="meta-grid">' +
+            buildPrintMetaItem_('Tanggal', formatPrintDate_(data.tanggal_kirim || data.tanggal_cetak || '')) +
+            buildPrintMetaItem_('No. SJ', data.no_surat_jalan) +
+            buildPrintMetaItem_('No. Nota', data.no_so) +
+            buildPrintMetaItem_('Term Bayar', data.term_pembayaran) +
+            buildPrintMetaItem_('Customer', data.nama_customer) +
+            buildPrintMetaItem_('Sales', data.sales_nama) +
+            '<div class="full-row">' +
+              '<div class="section-title">Alamat</div>' +
+              '<div class="address-box">' + escapeHtml_(data.alamat_kirim || '-') + '</div>' +
             '</div>' +
-            '<div class="section-title section-gap">Terbilang</div>' +
-            '<div class="terbilang-box">' + escapeHtml_(buildTerbilangRupiah_(total)) + '</div>' +
           '</div>' +
-          '<div class="summary-box">' +
-            buildPrintSummaryRow_('Subtotal', subtotal) +
-            buildPrintSummaryRow_('Diskon', diskon) +
-            buildPrintSummaryRow_('Grand Total', total, true) +
+          '<div>' +
+            '<table>' +
+              '<thead>' +
+                '<tr>' +
+                  '<th style="width:12mm;">No</th>' +
+                  '<th>Barang</th>' +
+                  '<th style="width:16mm;">Qty</th>' +
+                  '<th style="width:14mm;">Sat</th>' +
+                  '<th style="width:24mm;">Harga</th>' +
+                  '<th style="width:20mm;">Diskon</th>' +
+                  '<th style="width:28mm;">Jumlah</th>' +
+                '</tr>' +
+              '</thead>' +
+              '<tbody>' + detailRows + '</tbody>' +
+            '</table>' +
           '</div>' +
         '</div>' +
-        '<div class="sign-grid">' +
-          buildPrintSignBox_('Dibuat') +
-          buildPrintSignBox_('Disetujui') +
-          buildPrintSignBox_('Pelanggan') +
-          buildPrintSignBox_('Stempel / Paraf') +
+        '<div class="doc-footer">' +
+          '<div class="nota-grid">' +
+            '<div>' +
+              '<div class="section-title">Catatan Nota</div>' +
+              '<div class="note-box">' +
+                '<ul class="nota-note-list">' +
+                  '<li>Periksa barang saat diterima.</li>' +
+                  '<li>Pembayaran mengikuti term: ' + escapeHtml_(data.term_pembayaran || '-') + '.</li>' +
+                  '<li>Catatan order: ' + escapeHtml_(joinPrintValues_(data.catatan_order, data.catatan_kirim, ' | ') || '-') + '</li>' +
+                '</ul>' +
+              '</div>' +
+              '<div class="section-title section-gap">Terbilang</div>' +
+              '<div class="terbilang-box">' + escapeHtml_(buildTerbilangRupiah_(total)) + '</div>' +
+            '</div>' +
+            '<div class="summary-box">' +
+              buildPrintSummaryRow_('Subtotal', subtotal) +
+              buildPrintSummaryRow_('Diskon', diskon) +
+              buildPrintSummaryRow_('Grand Total', total, true) +
+            '</div>' +
+          '</div>' +
+          '<div class="sign-grid">' +
+            buildPrintSignBox_('Dibuat') +
+            buildPrintSignBox_('Disetujui') +
+            buildPrintSignBox_('Pelanggan') +
+            buildPrintSignBox_('Stempel / Paraf') +
+          '</div>' +
         '</div>' +
       '</section>';
   }
