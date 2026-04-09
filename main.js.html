@@ -387,7 +387,7 @@
     if (!tbody) return;
 
     if (!appState.deliveryOrders.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty-cell">Belum ada surat jalan.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">Belum ada surat jalan.</td></tr>';
       return;
     }
 
@@ -411,8 +411,6 @@
           '<td>' + escapeHtml_(noSo) + '</td>' +
           '<td>' + escapeHtml_(row.nama_customer) + '</td>' +
           '<td>' + buildStatusBadge_(row.status_kirim) + '</td>' +
-          '<td>' + escapeHtml_(row.driver || '') + '</td>' +
-          '<td>' + escapeHtml_(row.armada || '') + '</td>' +
           '<td><div class="inline-actions">' + actions.join('') + '</div></td>' +
         '</tr>';
     }).join('');
