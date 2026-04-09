@@ -387,7 +387,7 @@
     if (!tbody) return;
 
     if (!appState.deliveryOrders.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">Belum ada surat jalan.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-cell">Belum ada surat jalan.</td></tr>';
       return;
     }
 
@@ -408,6 +408,7 @@
       return '' +
         '<tr>' +
           '<td>' + escapeHtml_(row.no_surat_jalan) + '</td>' +
+          '<td>' + escapeHtml_(formatShortDateId_(row.tanggal_kirim || row.tanggal_cetak || '')) + '</td>' +
           '<td>' + escapeHtml_(noSo) + '</td>' +
           '<td>' + escapeHtml_(row.nama_customer) + '</td>' +
           '<td>' + buildStatusBadge_(row.status_kirim) + '</td>' +
@@ -1915,6 +1916,23 @@
     }
 
     return day + ' ' + monthNames[monthIndex] + ' ' + year;
+  }
+
+  function formatShortDateId_(value) {
+    var parts = String(value || '').split('-');
+    var monthNames = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+    ];
+    var year = Number(parts[0] || 0);
+    var monthIndex = Number(parts[1] || 0) - 1;
+    var day = Number(parts[2] || 0);
+
+    if (!year || monthIndex < 0 || monthIndex > 11 || !day) {
+      return String(value || '-');
+    }
+
+    return String(day).padStart(2, '0') + ' ' + monthNames[monthIndex] + ' ' + year;
   }
 
   function copyTextToClipboard_(text, onSuccess, onFailure) {
