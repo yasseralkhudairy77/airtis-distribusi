@@ -319,6 +319,30 @@
     margin-top: 16px;
   }
 
+  .detail-order-action-row {
+    margin-top: 16px;
+    justify-content: flex-start;
+  }
+
+  .sales-item-table-wrap {
+    margin-top: 16px;
+  }
+
+  .sales-order-total-grid {
+    margin-top: 16px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .sales-item-meta {
+    display: grid;
+    gap: 4px;
+  }
+
+  .sales-item-meta small {
+    color: var(--sap-muted);
+    font-size: 12px;
+  }
+
   input,
   select,
   textarea {
@@ -747,6 +771,10 @@
     }
 
     .plan-summary-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .sales-order-total-grid {
       grid-template-columns: 1fr;
     }
 

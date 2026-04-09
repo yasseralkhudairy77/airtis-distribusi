@@ -24,6 +24,7 @@ function clearDummyTransactionsOnly() {
 
   [
     APP_CONFIG.SHEETS.SALES_ORDER,
+    APP_CONFIG.SHEETS.SALES_ORDER_DETAIL,
     APP_CONFIG.SHEETS.APPROVAL_ORDER,
     APP_CONFIG.SHEETS.SURAT_JALAN,
     APP_CONFIG.SHEETS.LOG_STATUS_ORDER
@@ -78,6 +79,7 @@ function clearDataRows_() {
     APP_CONFIG.SHEETS.MASTER_CUSTOMER,
     APP_CONFIG.SHEETS.MASTER_USER,
     APP_CONFIG.SHEETS.SALES_ORDER,
+    APP_CONFIG.SHEETS.SALES_ORDER_DETAIL,
     APP_CONFIG.SHEETS.APPROVAL_ORDER,
     APP_CONFIG.SHEETS.SURAT_JALAN,
     APP_CONFIG.SHEETS.LOG_STATUS_ORDER
@@ -258,12 +260,24 @@ function createDummyTransactions_() {
     longitude: '106.816666',
     pic_customer: 'Pak Joko',
     no_hp_customer: '081300000101',
-    item: 'AIRTIS Galon 19L',
-    qty: 10,
-    harga: 18000,
-    diskon: 0,
-    subtotal: 180000,
-    total: 180000,
+    items: [
+      {
+        nama_item: 'AIRTIS Galon 19L',
+        qty: 10,
+        harga: 18000,
+        diskon: 0,
+        subtotal: 180000
+      },
+      {
+        nama_item: 'AIRTIS Cup 220 ml',
+        qty: 5,
+        harga: 15000,
+        diskon: 5000,
+        subtotal: 70000
+      }
+    ],
+    subtotal: 255000,
+    total: 250000,
     term_pembayaran: 'Cash',
     tanggal_kirim_rencana: today,
     catatan: 'Dummy order lancar'
@@ -330,12 +344,24 @@ function createDummyTransactions_() {
     longitude: '106.816666',
     pic_customer: 'Pak Joko',
     no_hp_customer: '081300000101',
-    item: 'AIRTIS Botol 330 ml',
-    qty: 15,
-    harga: 21000,
-    diskon: 5000,
-    subtotal: 315000,
-    total: 310000,
+    items: [
+      {
+        nama_item: 'AIRTIS Botol 330 ml',
+        qty: 15,
+        harga: 21000,
+        diskon: 5000,
+        subtotal: 310000
+      },
+      {
+        nama_item: 'AIRTIS Botol 600 ml',
+        qty: 8,
+        harga: 22000,
+        diskon: 0,
+        subtotal: 176000
+      }
+    ],
+    subtotal: 491000,
+    total: 486000,
     term_pembayaran: 'Cash',
     tanggal_kirim_rencana: today,
     catatan: 'Dummy order siap dibuatkan SJ'

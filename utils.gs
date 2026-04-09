@@ -10,6 +10,10 @@ function getSheetByName_(sheetName) {
   return sheet;
 }
 
+function getSheetByNameOrNull_(sheetName) {
+  return getSpreadsheet_().getSheetByName(sheetName);
+}
+
 function nowIso_() {
   return Utilities.formatDate(new Date(), APP_CONFIG.TIMEZONE, "yyyy-MM-dd'T'HH:mm:ss");
 }
@@ -106,4 +110,36 @@ function updateRowByKey_(sheetName, keyField, keyValue, updates) {
   }
 
   throw new Error('Data tidak ditemukan di ' + sheetName + ' untuk ' + keyField + ': ' + keyValue);
+}
+
+function ensureSheetHeadersContain_(sheetName, headers) {
+  var spreadsheet = getSpreadsheet_();
+  var sheet = spreadsheet.getSheetByName(sheetName);
+  var safeHeaders = headers || [];
+  var currentHeaders;
+  var missingHeaders;
+
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(sheetName);
+  }
+
+  if (sheet.getLastRow() === 0 || sheet.getLastColumn() === 0) {
+    if (safeHeaders.length) {
+      sheet.getRange(1, 1, 1, safeHeaders.length).setValues([safeHeaders]);
+      sheet.setFrozenRows(1);
+    }
+    return sheet;
+  }
+
+  currentHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  missingHeaders = safeHeaders.filter(function(header) {
+    return currentHeaders.indexOf(header) === -1;
+  });
+
+  if (missingHeaders.length) {
+    sheet.getRange(1, currentHeaders.length + 1, 1, missingHeaders.length).setValues([missingHeaders]);
+  }
+
+  sheet.setFrozenRows(1);
+  return sheet;
 }

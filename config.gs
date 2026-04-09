@@ -6,6 +6,7 @@ var APP_CONFIG = {
     MASTER_CUSTOMER: 'MASTER_CUSTOMER',
     MASTER_USER: 'MASTER_USER',
     SALES_ORDER: 'SALES_ORDER',
+    SALES_ORDER_DETAIL: 'SALES_ORDER_DETAIL',
     APPROVAL_ORDER: 'APPROVAL_ORDER',
     SURAT_JALAN: 'SURAT_JALAN',
     LOG_STATUS_ORDER: 'LOG_STATUS_ORDER',
@@ -49,6 +50,7 @@ var APP_CONFIG = {
     'SURAT_JALAN'
   ],
   OPTIONAL_SHEETS: [
+    'SALES_ORDER_DETAIL',
     'LOG_STATUS_ORDER',
     'MASTER_ITEM',
     'MASTER_STATUS'
@@ -115,6 +117,18 @@ var APP_CONFIG = {
       'catatan',
       'butuh_persetujuan',
       'alasan_hold'
+    ],
+    SALES_ORDER_DETAIL: [
+      'detail_id',
+      'no_so',
+      'urutan_item',
+      'kode_item',
+      'nama_item',
+      'qty',
+      'satuan',
+      'harga',
+      'diskon',
+      'subtotal'
     ],
     APPROVAL_ORDER: [
       'approval_id',

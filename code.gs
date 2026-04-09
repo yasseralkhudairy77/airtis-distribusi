@@ -74,7 +74,7 @@ function getApproverDashboardData(userId) {
     currentUser: currentUser,
     approvers: [currentUser],
     approvals: approvals.map(function(approval) {
-      var order = findSalesOrderByNoSo_(approval.no_so) || {};
+      var order = buildSalesOrderClientRow_(findSalesOrderByNoSo_(approval.no_so) || {});
 
       return {
         no_so: approval.no_so,
@@ -85,9 +85,10 @@ function getApproverDashboardData(userId) {
         status_approval: approval.status_approval,
         customer: order.nama_customer_input || '',
         alamat_kirim: order.alamat_kirim || '',
-        item: order.item || '',
-        qty: order.qty || '',
-        total: order.total || '',
+        item: order.item_summary || order.item || '',
+        qty: order.qty_summary || order.qty || '',
+        details: order.details || [],
+        total: order.total_order || order.total || '',
         status_order: order.status_order || '',
         status_pembayaran_customer: order.status_pembayaran_customer || '',
         total_tunggakan: order.total_tunggakan || '',
@@ -114,11 +115,11 @@ function getAdminDashboardData(userId) {
     return normalizeText_(row.status_order) === 'siap kirim';
   }).filter(function(row) {
     return !suratJalanByNoSo[String(row.no_so || '').trim()];
-  });
+  }).map(buildSalesOrderClientRow_);
   var tomorrowPlanDate = getTomorrowDateString_();
   var tomorrowOrders = salesOrders.filter(function(row) {
     return shouldIncludeTomorrowOrder_(row, tomorrowPlanDate);
-  });
+  }).map(buildSalesOrderClientRow_);
 
   return toClientValue_({
     currentUser: currentUser,
@@ -128,7 +129,20 @@ function getAdminDashboardData(userId) {
     tomorrowPlanDate: tomorrowPlanDate,
     tomorrowOrders: tomorrowOrders,
     readyOrders: readyOrders,
-    deliveryOrders: deliveryOrders
+    deliveryOrders: deliveryOrders.map(function(row) {
+      var order = buildSalesOrderClientRow_(findSalesOrderByNoSo_(row.no_so) || {});
+      var result = {};
+
+      Object.keys(row || {}).forEach(function(key) {
+        result[key] = row[key];
+      });
+
+      result.item_summary = order.item_summary || '';
+      result.qty_summary = order.qty_summary || '';
+      result.details = order.details || [];
+
+      return result;
+    })
   });
 }
 
@@ -163,10 +177,7 @@ function submitSalesOrderFromForm(userId, formData) {
     longitude: formData.longitude,
     pic_customer: formData.pic_customer,
     no_hp_customer: formData.no_hp_customer,
-    item: formData.item,
-    qty: Number(formData.qty || 0),
-    harga: Number(formData.harga || 0),
-    diskon: Number(formData.diskon || 0),
+    items: Array.isArray(formData.items) ? formData.items : [],
     subtotal: Number(formData.subtotal || 0),
     total: Number(formData.total || 0),
     term_pembayaran: formData.term_pembayaran,

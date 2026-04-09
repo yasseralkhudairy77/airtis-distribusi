@@ -1,5 +1,6 @@
 function createSuratJalan(noSo, options) {
   var salesOrder = findSalesOrderByNoSo_(noSo);
+  var orderDisplay = buildSalesOrderClientRow_(salesOrder);
 
   if (!salesOrder) {
     throw new Error('Sales order tidak ditemukan untuk no_so: ' + noSo);
@@ -26,8 +27,8 @@ function createSuratJalan(noSo, options) {
     customer_id: salesOrder.customer_id,
     nama_customer: salesOrder.nama_customer_input,
     alamat_kirim: salesOrder.alamat_kirim,
-    item: salesOrder.item,
-    qty: salesOrder.qty,
+    item: orderDisplay.item_summary || salesOrder.item,
+    qty: orderDisplay.qty_summary || salesOrder.qty,
     driver: payload.driver || '',
     armada: payload.armada || '',
     status_kirim: payload.status_kirim || 'Siap Kirim',
@@ -50,6 +51,7 @@ function getSuratJalanPrintData(noSo) {
   }
 
   var salesOrder = findSalesOrderByNoSo_(noSo) || {};
+  var orderDisplay = buildSalesOrderClientRow_(salesOrder);
 
   return {
     no_surat_jalan: suratJalan.no_surat_jalan || '',
@@ -59,8 +61,9 @@ function getSuratJalanPrintData(noSo) {
     customer_id: suratJalan.customer_id || '',
     nama_customer: suratJalan.nama_customer || salesOrder.nama_customer_input || '',
     alamat_kirim: suratJalan.alamat_kirim || salesOrder.alamat_kirim || '',
-    item: suratJalan.item || salesOrder.item || '',
-    qty: suratJalan.qty || salesOrder.qty || '',
+    item: suratJalan.item || orderDisplay.item_summary || salesOrder.item || '',
+    qty: suratJalan.qty || orderDisplay.qty_summary || salesOrder.qty || '',
+    items: orderDisplay.details || [],
     driver: suratJalan.driver || '',
     armada: suratJalan.armada || '',
     status_kirim: suratJalan.status_kirim || '',
@@ -69,7 +72,7 @@ function getSuratJalanPrintData(noSo) {
     pic_customer: salesOrder.pic_customer || '',
     no_hp_customer: salesOrder.no_hp_customer || '',
     term_pembayaran: salesOrder.term_pembayaran || '',
-    total: salesOrder.total || '',
+    total: orderDisplay.total_order || salesOrder.total || '',
     catatan_order: salesOrder.catatan || ''
   };
 }

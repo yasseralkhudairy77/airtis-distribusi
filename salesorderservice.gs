@@ -4,6 +4,8 @@ function submitSalesOrder(payload) {
   var now = getNowParts_();
   var noSo = generateDocNumber_(APP_CONFIG.DOC_PREFIX.SALES_ORDER);
   var customerCheck = buildOrderCustomerCheck_(payload);
+  var items = normalizeOrderItems_(payload);
+  var totals = calculateOrderTotals_(items);
   var prioritasKirim = resolvePrioritasKirim_(payload.tanggal_kirim_rencana, now.timestamp);
   var salesOrderRow = {
     no_so: noSo,
@@ -20,12 +22,12 @@ function submitSalesOrder(payload) {
     longitude: payload.longitude || '',
     pic_customer: payload.pic_customer,
     no_hp_customer: payload.no_hp_customer,
-    item: payload.item,
-    qty: payload.qty,
-    harga: payload.harga,
-    diskon: payload.diskon || 0,
-    subtotal: payload.subtotal,
-    total: payload.total,
+    item: buildOrderItemsSummary_(items),
+    qty: buildOrderQtyDisplay_(items),
+    harga: items.length === 1 ? items[0].harga : '',
+    diskon: totals.diskon_order,
+    subtotal: totals.subtotal_order,
+    total: totals.total_order,
     term_pembayaran: payload.term_pembayaran,
     status_pembayaran_customer: customerCheck.status_pembayaran_customer,
     total_tunggakan: customerCheck.total_tunggakan,
@@ -41,6 +43,7 @@ function submitSalesOrder(payload) {
   };
 
   appendRowByHeaders_(APP_CONFIG.SHEETS.SALES_ORDER, salesOrderRow);
+  writeSalesOrderDetails_(noSo, items);
   logStatusOrder_(noSo, '', salesOrderRow.status_order, payload.sales_id, salesOrderRow.alasan_hold);
 
   if (salesOrderRow.butuh_persetujuan === 'Ya') {
@@ -51,6 +54,7 @@ function submitSalesOrder(payload) {
     success: true,
     no_so: noSo,
     customer_id: salesOrderRow.customer_id,
+    jumlah_item: items.length,
     status_order: salesOrderRow.status_order,
     butuh_persetujuan: salesOrderRow.butuh_persetujuan,
     alasan_hold: salesOrderRow.alasan_hold
@@ -117,11 +121,6 @@ function validateSalesOrderPayload_(payload) {
     'alamat_kirim',
     'pic_customer',
     'no_hp_customer',
-    'item',
-    'qty',
-    'harga',
-    'subtotal',
-    'total',
     'term_pembayaran',
     'tanggal_kirim_rencana'
   ];
@@ -135,6 +134,8 @@ function validateSalesOrderPayload_(payload) {
   if (normalizeText_(payload.jenis_customer) === 'lama' && !payload.customer_id) {
     throw new Error('Customer lama wajib memilih customer_id');
   }
+
+  normalizeOrderItems_(payload);
 }
 
 function buildOrderCustomerCheck_(payload) {
@@ -170,6 +171,225 @@ function buildOrderCustomerCheck_(payload) {
     butuh_persetujuan: eligibility.butuh_persetujuan,
     alasan_hold: eligibility.alasan_hold
   };
+}
+
+function normalizeOrderItems_(payload) {
+  var rawItems = Array.isArray(payload.items) ? payload.items : [];
+  var items = rawItems.map(function(item, index) {
+    return normalizeOrderItemRow_(item, index);
+  }).filter(function(item) {
+    return item.nama_item;
+  });
+
+  if (!items.length && payload.item) {
+    items.push(normalizeOrderItemRow_({
+      nama_item: payload.item,
+      qty: payload.qty,
+      harga: payload.harga,
+      diskon: payload.diskon,
+      subtotal: payload.total || payload.subtotal
+    }, 0));
+  }
+
+  if (!items.length) {
+    throw new Error('Minimal satu item order wajib diisi.');
+  }
+
+  items.forEach(function(item, index) {
+    if (!item.nama_item) {
+      throw new Error('Nama item pada baris ' + (index + 1) + ' wajib diisi.');
+    }
+    if (item.qty <= 0) {
+      throw new Error('Qty pada baris ' + (index + 1) + ' harus lebih dari 0.');
+    }
+    if (item.harga < 0) {
+      throw new Error('Harga pada baris ' + (index + 1) + ' tidak boleh negatif.');
+    }
+    if (item.diskon < 0) {
+      throw new Error('Diskon pada baris ' + (index + 1) + ' tidak boleh negatif.');
+    }
+    if (item.subtotal < 0) {
+      throw new Error('Subtotal pada baris ' + (index + 1) + ' tidak valid.');
+    }
+  });
+
+  return items;
+}
+
+function normalizeOrderItemRow_(item, index) {
+  var normalizedItem = item || {};
+  var product = getProductCatalog_().find(function(row) {
+    return String(row.nama_item || '').trim() === String(normalizedItem.nama_item || '').trim();
+  }) || {};
+  var qty = Number(normalizedItem.qty || 0);
+  var harga = Number(normalizedItem.harga || 0);
+  var diskon = Number(normalizedItem.diskon || 0);
+  var subtotal = Number(normalizedItem.subtotal);
+
+  if (isNaN(subtotal)) {
+    subtotal = (qty * harga) - diskon;
+  }
+
+  return {
+    detail_id: generateDocNumber_('DTL'),
+    urutan_item: Number(index || 0) + 1,
+    kode_item: product.kode_item || '',
+    nama_item: String(normalizedItem.nama_item || '').trim(),
+    qty: qty,
+    satuan: product.satuan || '',
+    harga: harga,
+    diskon: diskon,
+    subtotal: subtotal > 0 ? subtotal : 0
+  };
+}
+
+function calculateOrderTotals_(items) {
+  return (items || []).reduce(function(result, item) {
+    result.subtotal_order += Number(item.qty || 0) * Number(item.harga || 0);
+    result.diskon_order += Number(item.diskon || 0);
+    result.total_order += Number(item.subtotal || 0);
+    return result;
+  }, {
+    subtotal_order: 0,
+    diskon_order: 0,
+    total_order: 0
+  });
+}
+
+function writeSalesOrderDetails_(noSo, items) {
+  var headers = APP_CONFIG.HEADERS.SALES_ORDER_DETAIL;
+
+  ensureSheetHeadersContain_(APP_CONFIG.SHEETS.SALES_ORDER_DETAIL, headers);
+  (items || []).forEach(function(item) {
+    appendRowByHeaders_(APP_CONFIG.SHEETS.SALES_ORDER_DETAIL, {
+      detail_id: item.detail_id,
+      no_so: noSo,
+      urutan_item: item.urutan_item,
+      kode_item: item.kode_item,
+      nama_item: item.nama_item,
+      qty: item.qty,
+      satuan: item.satuan,
+      harga: item.harga,
+      diskon: item.diskon,
+      subtotal: item.subtotal
+    });
+  });
+}
+
+function getSalesOrderDetailsByNoSo_(noSo) {
+  var sheet = getSheetByNameOrNull_(APP_CONFIG.SHEETS.SALES_ORDER_DETAIL);
+
+  if (!sheet) {
+    return [];
+  }
+
+  return getSheetData_(APP_CONFIG.SHEETS.SALES_ORDER_DETAIL).filter(function(row) {
+    return String(row.no_so || '').trim() === String(noSo || '').trim();
+  }).sort(function(left, right) {
+    return Number(left.urutan_item || 0) - Number(right.urutan_item || 0);
+  });
+}
+
+function getSalesOrderDetailsForDisplay_(order) {
+  var details = getSalesOrderDetailsByNoSo_(order && order.no_so);
+
+  if (details.length) {
+    return details.map(function(detail, index) {
+      return {
+        detail_id: detail.detail_id || '',
+        urutan_item: Number(detail.urutan_item || index + 1),
+        kode_item: detail.kode_item || '',
+        nama_item: detail.nama_item || '',
+        qty: Number(detail.qty || 0),
+        satuan: detail.satuan || '',
+        harga: Number(detail.harga || 0),
+        diskon: Number(detail.diskon || 0),
+        subtotal: Number(detail.subtotal || 0)
+      };
+    });
+  }
+
+  if (!order) {
+    return [];
+  }
+
+  if (!String(order.item || '').trim()) {
+    return [];
+  }
+
+  return [{
+    detail_id: '',
+    urutan_item: 1,
+    kode_item: '',
+    nama_item: String(order.item || '').trim(),
+    qty: Number(order.qty || 0),
+    satuan: getProductUnitByNameServer_(order.item),
+    harga: Number(order.harga || 0),
+    diskon: Number(order.diskon || 0),
+    subtotal: Number(order.total || order.subtotal || 0)
+  }];
+}
+
+function buildSalesOrderClientRow_(order) {
+  var source = order || {};
+  var details = getSalesOrderDetailsForDisplay_(source);
+  var totals = calculateOrderTotals_(details);
+
+  return Object.keys(source).reduce(function(result, key) {
+    result[key] = source[key];
+    return result;
+  }, {
+    details: details,
+    item_summary: buildOrderItemsSummary_(details) || source.item || '',
+    qty_summary: buildOrderQtyDisplay_(details) || source.qty || '',
+    jumlah_item: details.length,
+    subtotal_order: Number(source.subtotal || totals.subtotal_order || 0),
+    diskon_order: Number(source.diskon || totals.diskon_order || 0),
+    total_order: Number(source.total || totals.total_order || 0)
+  });
+}
+
+function buildOrderItemsSummary_(items) {
+  var safeItems = items || [];
+  var names = safeItems.map(function(item) {
+    return String(item.nama_item || '').trim();
+  }).filter(Boolean);
+
+  if (!names.length) {
+    return '';
+  }
+
+  if (names.length === 1) {
+    return names[0];
+  }
+
+  if (names.length === 2) {
+    return names.join(', ');
+  }
+
+  return names.slice(0, 2).join(', ') + ' +' + (names.length - 2) + ' item';
+}
+
+function buildOrderQtyDisplay_(items) {
+  var safeItems = items || [];
+
+  if (!safeItems.length) {
+    return '';
+  }
+
+  if (safeItems.length === 1) {
+    return String(safeItems[0].qty || '');
+  }
+
+  return safeItems.length + ' item';
+}
+
+function getProductUnitByNameServer_(itemName) {
+  var product = getProductCatalog_().find(function(row) {
+    return String(row.nama_item || '').trim() === String(itemName || '').trim();
+  }) || {};
+
+  return String(product.satuan || '').trim();
 }
 
 function resolvePrioritasKirim_(tanggalKirimRencana, currentDate) {
