@@ -338,7 +338,7 @@
         '<tr>' +
           '<td>' + escapeHtml_(noSo) + '</td>' +
           '<td>' + escapeHtml_(row.customer) + '</td>' +
-          '<td>' + escapeHtml_(getOrderItemLabel_(row)) + ' / ' + escapeHtml_(getOrderQtyLabel_(row)) + '</td>' +
+          '<td>' + buildOrderDetailCellHtml_(row) + '</td>' +
           '<td>' + buildPaymentBadge_(row.status_pembayaran_customer) + '</td>' +
           '<td>' + tunggakanHtml + '</td>' +
           '<td>' + formatNumber_(row.total) + '</td>' +
@@ -368,7 +368,7 @@
         '<tr>' +
           '<td>' + escapeHtml_(noSo) + '</td>' +
           '<td>' + escapeHtml_(row.nama_customer_input) + '</td>' +
-          '<td>' + escapeHtml_(getOrderItemLabel_(row)) + '</td>' +
+          '<td>' + buildOrderItemSummaryHtml_(row) + '</td>' +
           '<td>' + escapeHtml_(getOrderQtyLabel_(row)) + '</td>' +
           '<td>' + buildStatusBadge_(row.status_order) + '</td>' +
           '<td>' + formatNumber_(row.total_order || row.total) + '</td>' +
@@ -452,7 +452,7 @@
         '<tr>' +
           '<td>' + escapeHtml_(row.no_so) + '</td>' +
           '<td>' + escapeHtml_(row.nama_customer_input) + '</td>' +
-          '<td>' + escapeHtml_(getOrderItemLabel_(row)) + '</td>' +
+          '<td>' + buildOrderItemSummaryHtml_(row) + '</td>' +
           '<td>' + escapeHtml_(buildTomorrowQtyLabel_(row)) + '</td>' +
           '<td>' + escapeHtml_(extractAreaLabel_(row.alamat_kirim)) + '</td>' +
           '<td>' + buildStatusBadge_(getTomorrowDisplayStatus_(row)) + '</td>' +
@@ -1473,6 +1473,46 @@
     var product = getProductByName_(itemName);
 
     return String(product && product.satuan ? product.satuan : '').trim();
+  }
+
+  function buildOrderItemSummaryHtml_(row) {
+    var details = getOrderDetails_(row);
+    var summaryLabel = escapeHtml_(getOrderItemLabel_(row));
+
+    if (!details.length) {
+      return summaryLabel;
+    }
+
+    return '' +
+      '<div class="order-item-summary">' +
+        '<strong>' + summaryLabel + '</strong>' +
+        buildOrderDetailPreviewHtml_(details) +
+      '</div>';
+  }
+
+  function buildOrderDetailCellHtml_(row) {
+    return '' +
+      '<div class="order-item-summary">' +
+        '<strong>' + escapeHtml_(getOrderItemLabel_(row)) + '</strong>' +
+        '<div class="order-item-meta">Qty total: ' + escapeHtml_(getOrderQtyLabel_(row)) + '</div>' +
+        buildOrderDetailPreviewHtml_(getOrderDetails_(row)) +
+      '</div>';
+  }
+
+  function buildOrderDetailPreviewHtml_(details) {
+    var safeDetails = Array.isArray(details) ? details : [];
+
+    if (!safeDetails.length) {
+      return '';
+    }
+
+    return '<div class="order-item-preview">' + safeDetails.map(function(detail) {
+      var qtyLabel = formatNumber_(detail.qty || 0);
+      return '<div class="order-item-line">' +
+        '<span>' + escapeHtml_(detail.nama_item || '-') + '</span>' +
+        '<small>' + escapeHtml_(qtyLabel + (detail.satuan ? ' ' + detail.satuan : '')) + '</small>' +
+      '</div>';
+    }).join('') + '</div>';
   }
 
   function extractAreaLabel_(alamat) {
