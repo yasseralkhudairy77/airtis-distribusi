@@ -50,6 +50,7 @@ function submitSalesOrder(payload) {
   return {
     success: true,
     no_so: noSo,
+    customer_id: salesOrderRow.customer_id,
     status_order: salesOrderRow.status_order,
     butuh_persetujuan: salesOrderRow.butuh_persetujuan,
     alasan_hold: salesOrderRow.alasan_hold
@@ -138,9 +139,11 @@ function validateSalesOrderPayload_(payload) {
 
 function buildOrderCustomerCheck_(payload) {
   if (normalizeText_(payload.jenis_customer) === 'baru') {
+    var customer = ensureCustomerMasterForNewOrder_(payload);
+
     return {
-      customer_id: payload.customer_id || '',
-      nama_customer_input: payload.nama_customer_input || '',
+      customer_id: customer.kode_customer || '',
+      nama_customer_input: customer.nama_customer || payload.nama_customer_input || '',
       status_pembayaran_customer: 'Lancar',
       total_tunggakan: 0,
       jumlah_nota_overdue: 0,

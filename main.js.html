@@ -978,6 +978,7 @@
     var isWarning = result.butuh_persetujuan === 'Ya';
     var lines = [
       'No. SO: ' + result.no_so,
+      'ID Customer: ' + (result.customer_id || '-'),
       'Status Order: ' + result.status_order,
       'Butuh Persetujuan: ' + result.butuh_persetujuan
     ];

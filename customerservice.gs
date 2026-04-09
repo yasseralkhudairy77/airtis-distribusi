@@ -122,3 +122,79 @@ function formatCustomerDate_(value) {
 function formatNumberServer_(value) {
   return Number(value || 0).toLocaleString('id-ID');
 }
+
+function ensureCustomerMasterForNewOrder_(payload) {
+  var existingCustomer = findExistingCustomerForNewOrder_(payload);
+
+  if (existingCustomer) {
+    return existingCustomer;
+  }
+
+  var customerRow = {
+    kode_customer: generateNextCustomerCode_(),
+    nama_customer: String(payload.nama_customer_input || '').trim(),
+    tipe_customer: 'Retail',
+    kategori_customer: 'Customer Baru',
+    alamat: String(payload.alamat_kirim || '').trim(),
+    link_google_maps: String(payload.link_google_maps || '').trim(),
+    pic: String(payload.pic_customer || '').trim(),
+    no_hp: String(payload.no_hp_customer || '').trim(),
+    latitude: String(payload.latitude || '').trim(),
+    longitude: String(payload.longitude || '').trim(),
+    status_customer: 'Baru',
+    status_pembayaran: 'Lancar',
+    total_tunggakan: 0,
+    jumlah_nota_overdue: 0,
+    tanggal_jatuh_tempo_terdekat: '',
+    catatan_piutang: '',
+    limit_tunggakan: 0,
+    catatan: 'Auto dibuat dari sales order customer baru'
+  };
+
+  appendRowByHeaders_(APP_CONFIG.SHEETS.MASTER_CUSTOMER, customerRow);
+  return customerRow;
+}
+
+function findExistingCustomerForNewOrder_(payload) {
+  var targetName = normalizeText_(payload.nama_customer_input);
+  var targetPhone = normalizeText_(payload.no_hp_customer);
+
+  if (!targetName) {
+    return null;
+  }
+
+  return getCustomers().find(function(customer) {
+    var customerName = normalizeText_(customer.nama_customer);
+    var customerPhone = normalizeText_(customer.no_hp);
+
+    if (customerName !== targetName) {
+      return false;
+    }
+
+    if (!targetPhone) {
+      return true;
+    }
+
+    return customerPhone === targetPhone;
+  }) || null;
+}
+
+function generateNextCustomerCode_() {
+  var maxNumber = 0;
+
+  getCustomers().forEach(function(customer) {
+    var match = String(customer.kode_customer || '').trim().toUpperCase().match(/^CUST(\d+)$/);
+    var numberValue;
+
+    if (!match) {
+      return;
+    }
+
+    numberValue = Number(match[1] || 0);
+    if (numberValue > maxNumber) {
+      maxNumber = numberValue;
+    }
+  });
+
+  return 'CUST' + String(maxNumber + 1).padStart(3, '0');
+}
