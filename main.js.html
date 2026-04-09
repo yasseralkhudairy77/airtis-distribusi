@@ -46,6 +46,11 @@
         activateTab_(button.dataset.tab);
       });
     });
+    document.querySelectorAll('.admin-subtab-btn').forEach(function(button) {
+      button.addEventListener('click', function() {
+        activateAdminView_(button.dataset.adminView);
+      });
+    });
 
     document.getElementById('sales_id').addEventListener('change', handleSalesChange_);
     document.getElementById('customer_id').addEventListener('change', handleCustomerChange_);
@@ -1034,6 +1039,9 @@
     });
 
     if (currentUser.authorized) {
+      if (roleKey === 'cs_admin') {
+        activateAdminView_('operations');
+      }
       activateTab_(roleKey === 'cs_admin' ? 'admin' : roleKey);
     }
   }
@@ -1115,6 +1123,18 @@
       status_aktif: incomingUser.status_aktif || currentUser.status_aktif || '',
       authorized: typeof incomingUser.authorized === 'boolean' ? incomingUser.authorized : !!currentUser.authorized
     };
+  }
+
+  function activateAdminView_(viewName) {
+    var targetView = viewName === 'planning' ? 'planning' : 'operations';
+
+    document.querySelectorAll('.admin-subtab-btn').forEach(function(button) {
+      button.classList.toggle('active', button.dataset.adminView === targetView);
+    });
+
+    document.querySelectorAll('.admin-view-panel').forEach(function(panel) {
+      panel.classList.toggle('active', panel.id === 'admin-view-' + targetView);
+    });
   }
 
   function resetForm_() {

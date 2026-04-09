@@ -281,36 +281,13 @@
               </article>
             </div>
 
-            <section class="plan-card">
-              <div class="panel-header">
-                <div>
-                  <h3 class="section-title compact">Rencana Kirim Besok</h3>
-                  <p class="panel-subtitle">Rekap H-1 untuk dibagikan oleh CS ke grup delivery.</p>
-                </div>
-                <div class="inline-actions">
-                  <button type="button" class="ghost-btn" id="generateTomorrowPlanBtn">Generate Rekap</button>
-                  <button type="button" class="primary-btn" id="copyTomorrowPlanBtn" disabled>Copy Format Grup</button>
-                </div>
-              </div>
+            <div class="admin-subtabs" id="adminSubtabs">
+              <button type="button" class="admin-subtab-btn active" data-admin-view="operations">Operasional</button>
+              <button type="button" class="admin-subtab-btn" data-admin-view="planning">Rencana Besok</button>
+            </div>
 
-              <div class="summary-grid plan-summary-grid">
-                <article class="summary-card">
-                  <span class="summary-label">Outlet Besok</span>
-                  <strong class="summary-value" id="summaryTomorrowOutlets">0</strong>
-                  <span class="summary-note">Outlet unik yang masuk rencana kirim H+1</span>
-                </article>
-                <article class="summary-card">
-                  <span class="summary-label">Order Besok</span>
-                  <strong class="summary-value" id="summaryTomorrowOrders">0</strong>
-                  <span class="summary-note">Total sales order bertanggal kirim besok</span>
-                </article>
-                <article class="summary-card">
-                  <span class="summary-label">Jenis Barang</span>
-                  <strong class="summary-value" id="summaryTomorrowItems">0</strong>
-                  <span class="summary-note">Jumlah item unik di rekap barang</span>
-                </article>
-              </div>
-
+            <section class="admin-view-panel active" id="admin-view-operations">
+              <h3 class="section-title">Order Siap Kirim</h3>
               <div class="table-wrap">
                 <table class="data-table">
                   <thead>
@@ -330,51 +307,83 @@
                 </table>
               </div>
 
-              <label class="field plan-output-field">
-                <span>Preview Format Grup Delivery</span>
-                <textarea id="tomorrowPlanOutput" rows="10" readonly placeholder="Klik Generate Rekap untuk menyiapkan format share ke grup delivery."></textarea>
-              </label>
+              <h3 class="section-title">Surat Jalan</h3>
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>No SJ</th>
+                      <th>No SO</th>
+                      <th>Customer</th>
+                      <th>Status</th>
+                      <th>Driver</th>
+                      <th>Armada</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="deliveryTableBody">
+                    <tr><td colspan="7" class="empty-cell">Belum ada surat jalan.</td></tr>
+                  </tbody>
+                </table>
+              </div>
             </section>
 
-            <h3 class="section-title">Order Siap Kirim</h3>
-            <div class="table-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>No SO</th>
-                    <th>Customer</th>
-                    <th>Item</th>
-                    <th>Qty</th>
-                    <th>Status</th>
-                    <th>Total</th>
-                    <th>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody id="readyOrderTableBody">
-                  <tr><td colspan="7" class="empty-cell">Belum ada order siap kirim.</td></tr>
-                </tbody>
-              </table>
-            </div>
+            <section class="admin-view-panel" id="admin-view-planning">
+              <section class="plan-card">
+                <div class="panel-header">
+                  <div>
+                    <h3 class="section-title compact">Rencana Kirim Besok</h3>
+                    <p class="panel-subtitle">Rekap H-1 untuk dibagikan oleh CS ke grup delivery.</p>
+                  </div>
+                  <div class="inline-actions">
+                    <button type="button" class="ghost-btn" id="generateTomorrowPlanBtn">Generate Rekap</button>
+                    <button type="button" class="primary-btn" id="copyTomorrowPlanBtn" disabled>Copy Format Grup</button>
+                  </div>
+                </div>
 
-            <h3 class="section-title">Surat Jalan</h3>
-            <div class="table-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>No SJ</th>
-                    <th>No SO</th>
-                    <th>Customer</th>
-                    <th>Status</th>
-                    <th>Driver</th>
-                    <th>Armada</th>
-                    <th>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody id="deliveryTableBody">
-                  <tr><td colspan="7" class="empty-cell">Belum ada surat jalan.</td></tr>
-                </tbody>
-              </table>
-            </div>
+                <div class="summary-grid plan-summary-grid">
+                  <article class="summary-card">
+                    <span class="summary-label">Outlet Besok</span>
+                    <strong class="summary-value" id="summaryTomorrowOutlets">0</strong>
+                    <span class="summary-note">Outlet unik yang masuk rencana kirim H+1</span>
+                  </article>
+                  <article class="summary-card">
+                    <span class="summary-label">Order Besok</span>
+                    <strong class="summary-value" id="summaryTomorrowOrders">0</strong>
+                    <span class="summary-note">Total sales order bertanggal kirim besok</span>
+                  </article>
+                  <article class="summary-card">
+                    <span class="summary-label">Jenis Barang</span>
+                    <strong class="summary-value" id="summaryTomorrowItems">0</strong>
+                    <span class="summary-note">Jumlah item unik di rekap barang</span>
+                  </article>
+                </div>
+
+                <div class="table-wrap">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>No SO</th>
+                        <th>Customer</th>
+                        <th>Item</th>
+                        <th>Qty</th>
+                        <th>Area</th>
+                        <th>Status</th>
+                        <th>Sales</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tomorrowPlanTableBody">
+                      <tr><td colspan="7" class="empty-cell">Belum ada rencana kirim untuk besok.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <label class="field plan-output-field">
+                  <span>Preview Format Grup Delivery</span>
+                  <textarea id="tomorrowPlanOutput" rows="10" readonly placeholder="Klik Generate Rekap untuk menyiapkan format share ke grup delivery."></textarea>
+                </label>
+              </section>
+            </section>
           </section>
         </section>
       </section>

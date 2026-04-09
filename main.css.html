@@ -178,6 +178,42 @@
     display: block;
   }
 
+  .admin-subtabs {
+    display: flex;
+    gap: 8px;
+    margin: 0 0 20px;
+    padding: 8px;
+    background: #f8fafc;
+    border: 1px solid var(--sap-border);
+    border-radius: 8px;
+    flex-wrap: wrap;
+  }
+
+  .admin-subtab-btn {
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--sap-text);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .admin-subtab-btn.active {
+    background: var(--sap-blue);
+    border-color: var(--sap-blue);
+    color: #fff;
+  }
+
+  .admin-view-panel {
+    display: none;
+  }
+
+  .admin-view-panel.active {
+    display: block;
+  }
+
   .order-form {
     display: grid;
     gap: 16px;
@@ -688,6 +724,17 @@
       flex: 0 0 auto;
       min-height: 42px;
       padding: 10px 14px;
+    }
+
+    .admin-subtabs {
+      gap: 6px;
+      padding: 6px;
+    }
+
+    .admin-subtab-btn {
+      flex: 1 1 0;
+      min-height: 42px;
+      text-align: center;
     }
 
     .form-grid {
