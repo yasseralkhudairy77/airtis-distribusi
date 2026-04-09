@@ -153,7 +153,7 @@ function getTomorrowDateString_() {
 }
 
 function shouldIncludeTomorrowOrder_(row, tomorrowDate) {
-  var tanggalRencana = String(row.tanggal_kirim_rencana || '').trim();
+  var tanggalRencana = normalizeSheetDateToYmd_(row.tanggal_kirim_rencana);
   var statusOrder = normalizeText_(row.status_order);
 
   if (tanggalRencana !== String(tomorrowDate || '').trim()) {

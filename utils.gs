@@ -61,6 +61,14 @@ function normalizeText_(value) {
   return String(value || '').trim().toLowerCase();
 }
 
+function normalizeSheetDateToYmd_(value) {
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return Utilities.formatDate(value, APP_CONFIG.TIMEZONE, 'yyyy-MM-dd');
+  }
+
+  return String(value || '').trim();
+}
+
 function appendRowByHeaders_(sheetName, data) {
   var sheet = getSheetByName_(sheetName);
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
