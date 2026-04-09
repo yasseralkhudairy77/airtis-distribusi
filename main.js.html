@@ -7,6 +7,7 @@
     users: [],
     products: [],
     salesOrderItems: [],
+    adminOrderItems: [],
     approvals: [],
     approvers: [],
     readyOrders: [],
@@ -77,6 +78,7 @@
     document.getElementById('admin_qty').addEventListener('input', calculateAdminTotals_);
     document.getElementById('admin_harga').addEventListener('input', calculateAdminTotals_);
     document.getElementById('admin_diskon').addEventListener('input', calculateAdminTotals_);
+    document.getElementById('addAdminItemBtn').addEventListener('click', addAdminItem_);
     document.getElementById('resetAgentBtn').addEventListener('click', resetAgentForm_);
     document.getElementById('agentOrderForm').addEventListener('submit', submitAgentOrderForm_);
     document.getElementById('openAgentModalBtn').addEventListener('click', openAgentModal_);
@@ -196,6 +198,7 @@
 
           renderAdminCustomerOptions_();
           renderAdminProductOptions_();
+          renderAdminOrderItems_();
           handleAdminCustomerChange_();
           handleAdminProductChange_();
           renderAdminSummary_();
@@ -490,6 +493,35 @@
     calculateSalesOrderTotals_();
   }
 
+  function renderAdminOrderItems_() {
+    var tbody = document.getElementById('adminOrderItemsTableBody');
+
+    if (!tbody) return;
+
+    if (!appState.adminOrderItems.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-cell">Belum ada item di order agen.</td></tr>';
+      calculateAdminOrderTotals_();
+      return;
+    }
+
+    tbody.innerHTML = appState.adminOrderItems.map(function(item, index) {
+      return '' +
+        '<tr>' +
+          '<td><div class="sales-item-meta">' +
+            '<strong>' + escapeHtml_(item.nama_item) + '</strong>' +
+            '<small>' + escapeHtml_(item.satuan || '-') + '</small>' +
+          '</div></td>' +
+          '<td>' + escapeHtml_(formatNumber_(item.qty)) + '</td>' +
+          '<td>' + escapeHtml_(formatCurrencyInput_(item.harga)) + '</td>' +
+          '<td>' + escapeHtml_(formatCurrencyInput_(item.diskon)) + '</td>' +
+          '<td>' + escapeHtml_(formatCurrencyInput_(item.subtotal)) + '</td>' +
+          '<td><button type="button" class="danger-btn" onclick="removeAdminItem_(' + index + ')">Hapus</button></td>' +
+        '</tr>';
+    }).join('');
+
+    calculateAdminOrderTotals_();
+  }
+
   function resetTomorrowPlanOutput_() {
     var output = document.getElementById('tomorrowPlanOutput');
     if (!output) return;
@@ -657,6 +689,29 @@
     setStatusText_('Item berhasil dihapus dari sales order');
   }
 
+  function addAdminItem_() {
+    var draftItem = collectAdminItemDraft_();
+
+    if (draftItem.validationMessage) {
+      setStatusText_('Detail item agen belum lengkap');
+      renderResult_(draftItem.validationMessage, true);
+      return;
+    }
+
+    appState.adminOrderItems.push(draftItem.item);
+    renderAdminOrderItems_();
+    resetAdminItemDraft_();
+    setStatusText_('Item berhasil ditambahkan ke order agen');
+  }
+
+  function removeAdminItem_(index) {
+    appState.adminOrderItems = appState.adminOrderItems.filter(function(_, itemIndex) {
+      return itemIndex !== Number(index);
+    });
+    renderAdminOrderItems_();
+    setStatusText_('Item berhasil dihapus dari order agen');
+  }
+
   function handleAdminProductChange_() {
     var productSelect = document.getElementById('admin_item');
     if (!productSelect) return;
@@ -724,8 +779,24 @@
     var subtotal = qty * harga;
     var total = subtotal - diskon;
 
-    setFieldValue_('admin_subtotal', formatCurrencyInput_(subtotal > 0 ? subtotal : 0));
-    setFieldValue_('admin_total', formatCurrencyInput_(total > 0 ? total : 0));
+    setFieldValue_('admin_line_subtotal', formatCurrencyInput_(total > 0 ? total : 0));
+  }
+
+  function calculateAdminOrderTotals_() {
+    var totals = appState.adminOrderItems.reduce(function(result, item) {
+      result.subtotal += Number(item.qty || 0) * Number(item.harga || 0);
+      result.diskon += Number(item.diskon || 0);
+      result.total += Number(item.subtotal || 0);
+      return result;
+    }, {
+      subtotal: 0,
+      diskon: 0,
+      total: 0
+    });
+
+    setFieldValue_('admin_subtotal', formatCurrencyInput_(totals.subtotal));
+    setFieldValue_('admin_diskon_total', formatCurrencyInput_(totals.diskon));
+    setFieldValue_('admin_total', formatCurrencyInput_(totals.total));
   }
 
   function submitForm_(event) {
@@ -884,7 +955,15 @@
     event.preventDefault();
 
     var payload = collectAgentFormData_();
+    var validationMessage = validateAgentFormPayload_(payload);
     var submitBtn = document.getElementById('submitAgentBtn');
+
+    if (validationMessage) {
+      setStatusText_('Form pengiriman agen belum lengkap');
+      renderResult_(validationMessage, true);
+      return;
+    }
+
     submitBtn.disabled = true;
     setStatusText_('Mengirim pengiriman agen...');
 
@@ -992,8 +1071,62 @@
     };
   }
 
+  function collectAdminItemDraft_() {
+    calculateAdminTotals_();
+
+    var namaItem = String(getFieldValue_('admin_item') || '').trim();
+    var qty = Number(getFieldValue_('admin_qty') || 0);
+    var harga = Number(getFieldValue_('admin_harga') || 0);
+    var diskon = Number(getFieldValue_('admin_diskon') || 0);
+    var subtotal = parseCurrencyInput_(getFieldValue_('admin_line_subtotal'));
+    var product = getProductByName_(namaItem);
+
+    if (!namaItem) {
+      return { validationMessage: 'Produk wajib dipilih sebelum menambah item agen.' };
+    }
+
+    if (qty <= 0) {
+      return { validationMessage: 'Qty item agen harus lebih dari 0.' };
+    }
+
+    if (harga < 0) {
+      return { validationMessage: 'Harga item agen tidak boleh negatif.' };
+    }
+
+    if (diskon < 0) {
+      return { validationMessage: 'Diskon item agen tidak boleh negatif.' };
+    }
+
+    return {
+      validationMessage: '',
+      item: {
+        kode_item: product ? product.kode_item || '' : '',
+        nama_item: namaItem,
+        qty: qty,
+        satuan: product ? product.satuan || '' : '',
+        harga: harga,
+        diskon: diskon,
+        subtotal: subtotal
+      }
+    };
+  }
+
   function getSalesOrderItemsPayload_() {
     return appState.salesOrderItems.map(function(item) {
+      return {
+        kode_item: item.kode_item || '',
+        nama_item: item.nama_item || '',
+        qty: Number(item.qty || 0),
+        satuan: item.satuan || '',
+        harga: Number(item.harga || 0),
+        diskon: Number(item.diskon || 0),
+        subtotal: Number(item.subtotal || 0)
+      };
+    });
+  }
+
+  function getAdminOrderItemsPayload_() {
+    return appState.adminOrderItems.map(function(item) {
       return {
         kode_item: item.kode_item || '',
         nama_item: item.nama_item || '',
@@ -1012,6 +1145,14 @@
     setFieldValue_('harga', 0);
     setFieldValue_('diskon', 0);
     setFieldValue_('line_subtotal', formatCurrencyInput_(0));
+  }
+
+  function resetAdminItemDraft_() {
+    setFieldValue_('admin_item', '');
+    setFieldValue_('admin_qty', '');
+    setFieldValue_('admin_harga', 0);
+    setFieldValue_('admin_diskon', 0);
+    setFieldValue_('admin_line_subtotal', formatCurrencyInput_(0));
   }
 
   function collectFormData_() {
@@ -1053,7 +1194,7 @@
   }
 
   function collectAgentFormData_() {
-    calculateAdminTotals_();
+    calculateAdminOrderTotals_();
 
     var jenisCustomer = getAdminJenisCustomer_();
     var selectedCustomer = getSelectedAdminCustomer_();
@@ -1067,10 +1208,7 @@
       longitude: '',
       pic_customer: getFieldValue_('admin_pic_customer'),
       no_hp_customer: getFieldValue_('admin_no_hp_customer'),
-      item: getFieldValue_('admin_item'),
-      qty: getFieldValue_('admin_qty'),
-      harga: getFieldValue_('admin_harga'),
-      diskon: getFieldValue_('admin_diskon') || 0,
+      items: getAdminOrderItemsPayload_(),
       subtotal: parseCurrencyInput_(getFieldValue_('admin_subtotal')),
       total: parseCurrencyInput_(getFieldValue_('admin_total')),
       term_pembayaran: getFieldValue_('admin_term_pembayaran'),
@@ -1086,6 +1224,34 @@
     }
 
     return formData;
+  }
+
+  function validateAgentFormPayload_(payload) {
+    if (!Array.isArray(payload.items) || !payload.items.length) {
+      return 'Minimal satu item order agen wajib ditambahkan.';
+    }
+
+    if (String(payload.jenis_customer || '') !== 'Baru') {
+      return '';
+    }
+
+    if (!String(payload.nama_customer_input || '').trim()) {
+      return 'Nama Agen / Customer wajib diisi untuk agen baru.';
+    }
+
+    if (!String(payload.pic_customer || '').trim()) {
+      return 'PIC Customer wajib diisi untuk agen baru.';
+    }
+
+    if (!String(payload.alamat_kirim || '').trim()) {
+      return 'Alamat Kirim wajib diisi untuk agen baru.';
+    }
+
+    if (!String(payload.no_hp_customer || '').trim()) {
+      return 'No. HP Customer wajib diisi untuk agen baru.';
+    }
+
+    return '';
   }
 
   function validateSalesFormPayload_(payload) {
@@ -1304,10 +1470,11 @@
 
   function resetAgentForm_() {
     document.getElementById('agentOrderForm').reset();
+    appState.adminOrderItems = [];
     document.querySelector('input[name="admin_jenis_customer"][value="Lama"]').checked = true;
     clearAdminCustomerInfo_();
-    setFieldValue_('admin_subtotal', formatCurrencyInput_(0));
-    setFieldValue_('admin_total', formatCurrencyInput_(0));
+    renderAdminOrderItems_();
+    resetAdminItemDraft_();
     handleAdminJenisCustomerChange_();
     handleAdminProductChange_();
     setFieldValue_('admin_tanggal_kirim_rencana', getFieldValue_('tanggal_kirim_rencana'));
@@ -1338,7 +1505,9 @@
     setFieldValue_('line_subtotal', formatCurrencyInput_(0));
     setFieldValue_('admin_tanggal_kirim_rencana', iso);
     setFieldValue_('admin_subtotal', formatCurrencyInput_(0));
+    setFieldValue_('admin_diskon_total', formatCurrencyInput_(0));
     setFieldValue_('admin_total', formatCurrencyInput_(0));
+    setFieldValue_('admin_line_subtotal', formatCurrencyInput_(0));
     updateSalesNewCustomerRequirements_(getJenisCustomer_() === 'Baru');
   }
 

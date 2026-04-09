@@ -504,11 +504,44 @@
               <input id="admin_diskon" name="admin_diskon" type="number" min="0" step="1" value="0" />
             </label>
             <label class="field">
-              <span>Subtotal</span>
+              <span>Total Item</span>
+              <input id="admin_line_subtotal" name="admin_line_subtotal" type="text" readonly />
+            </label>
+          </div>
+
+          <div class="action-row detail-order-action-row">
+            <button type="button" class="primary-btn" id="addAdminItemBtn">Tambah Item</button>
+          </div>
+
+          <div class="table-wrap sales-item-table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Produk</th>
+                  <th>Qty</th>
+                  <th>Harga</th>
+                  <th>Diskon</th>
+                  <th>Subtotal</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="adminOrderItemsTableBody">
+                <tr><td colspan="6" class="empty-cell">Belum ada item di order agen.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="form-grid sales-order-total-grid">
+            <label class="field">
+              <span>Subtotal Order</span>
               <input id="admin_subtotal" name="admin_subtotal" type="text" readonly />
             </label>
             <label class="field">
-              <span>Total</span>
+              <span>Diskon Order</span>
+              <input id="admin_diskon_total" name="admin_diskon_total" type="text" readonly />
+            </label>
+            <label class="field">
+              <span>Total Order</span>
               <input id="admin_total" name="admin_total" type="text" readonly />
             </label>
           </div>
