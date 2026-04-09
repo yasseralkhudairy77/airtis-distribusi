@@ -1997,10 +1997,7 @@
   function buildPrintDocument_(data) {
     var printConfig = window.APP_BOOTSTRAP.printConfig || {};
     var title = 'Surat Jalan ' + escapeHtml_(data.no_surat_jalan || '');
-    var copyLabels = Array.isArray(printConfig.COPY_LABELS) ? printConfig.COPY_LABELS : ['Lembar Gudang', 'Lembar Customer'];
-    var copiesHtml = copyLabels.map(function(copyLabel, index) {
-      return buildDotMatrixCopy_(data, copyLabel, index < copyLabels.length - 1);
-    }).join('');
+    var printBodyHtml = buildCombinedPrintSheet_(data);
 
     return '' +
       '<!DOCTYPE html>' +
@@ -2010,73 +2007,85 @@
         '<title>' + title + '</title>' +
         '<style>' +
           'body{font-family:' + escapeHtml_(printConfig.FONT_FAMILY || '"Courier New", monospace') + ';font-size:' + escapeHtml_(String(printConfig.FONT_SIZE_PX || 13)) + 'px;color:#111;margin:0;background:#fff;}' +
-          '.print-wrap{width:210mm;margin:0 auto;padding:8mm 8mm 12mm;}' +
-          '.copy-block{border:1px dashed #222;padding:6mm 5mm 7mm;margin:0 0 7mm;background:#fff;}' +
-          '.copy-block.last{margin-bottom:0;}' +
-          '.copy-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #222;padding-bottom:4mm;margin-bottom:4mm;gap:5mm;}' +
+          '.print-wrap{width:' + escapeHtml_(String(printConfig.PAPER_WIDTH_MM || 210)) + 'mm;margin:0 auto;padding:6mm 6mm 8mm;}' +
+          '.sheet-block{border:1px dashed #222;padding:4mm 4mm 5mm;background:#fff;}' +
+          '.doc-section{margin:0 0 4mm;}' +
+          '.doc-section.last{margin-bottom:0;}' +
+          '.copy-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #222;padding-bottom:3mm;margin-bottom:3mm;gap:4mm;}' +
           '.brand{display:flex;align-items:flex-start;gap:4mm;}' +
-          '.brand-logo{width:24mm;height:24mm;object-fit:contain;flex:0 0 auto;}' +
-          '.brand-title{font-size:20px;font-weight:bold;letter-spacing:0.4px;margin:0 0 2px;}' +
-          '.brand-subtitle{margin:0;font-size:12px;}' +
-          '.copy-label{text-align:right;font-size:12px;line-height:1.5;}' +
-          '.copy-label strong{display:block;font-size:16px;letter-spacing:1px;}' +
-          '.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:2mm 6mm;margin:0 0 4mm;}' +
-          '.meta-item{display:grid;grid-template-columns:34mm 1fr;gap:2mm;font-size:13px;line-height:1.45;}' +
+          '.brand-logo{width:17mm;height:17mm;object-fit:contain;flex:0 0 auto;}' +
+          '.brand-title{font-size:17px;font-weight:bold;letter-spacing:0.5px;margin:0 0 1mm;}' +
+          '.brand-subtitle{margin:0;font-size:11px;line-height:1.3;}' +
+          '.doc-title{text-align:right;font-size:11px;line-height:1.4;}' +
+          '.doc-title strong{display:block;font-size:17px;letter-spacing:1px;}' +
+          '.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:2mm 5mm;margin:0 0 3mm;}' +
+          '.meta-item{display:grid;grid-template-columns:24mm 1fr;gap:2mm;font-size:12px;line-height:1.35;}' +
           '.full-row{grid-column:1 / -1;}' +
-          '.address-box,.note-box{border:1px solid #222;padding:3mm;min-height:16mm;white-space:pre-line;}' +
-          '.section-title{font-weight:bold;margin:0 0 2mm;font-size:12px;}' +
-          'table{width:100%;border-collapse:collapse;margin-top:3mm;}' +
-          'th,td{border:1px solid #222;padding:2.5mm;font-size:13px;text-align:left;vertical-align:top;}' +
-          'th{text-transform:uppercase;font-size:12px;letter-spacing:.4px;}' +
-          '.sign-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6mm;margin-top:9mm;}' +
-          '.sign-box{text-align:center;min-height:24mm;display:flex;flex-direction:column;justify-content:flex-end;}' +
+          '.address-box,.note-box{border:1px solid #222;padding:2mm;min-height:10mm;white-space:pre-line;}' +
+          '.section-title{font-weight:bold;margin:0 0 1.5mm;font-size:11px;}' +
+          'table{width:100%;border-collapse:collapse;margin-top:2mm;}' +
+          'th,td{border:1px solid #222;padding:1.5mm 2mm;font-size:11px;text-align:left;vertical-align:top;}' +
+          'th{text-transform:uppercase;font-size:10px;letter-spacing:.3px;}' +
+          '.section-gap{margin-top:3mm;}' +
+          '.sign-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm;margin-top:5mm;}' +
+          '.sign-box{text-align:center;min-height:18mm;display:flex;flex-direction:column;justify-content:flex-end;}' +
           '.sign-line{border-top:1px solid #222;padding-top:2mm;font-size:12px;}' +
-          '.tear-line{border-top:2px dashed #666;margin:7mm 0 0;padding-top:4mm;text-align:center;font-size:11px;letter-spacing:1px;}' +
-          '@page{size:' + escapeHtml_(String(printConfig.PAPER_WIDTH_MM || 241)) + 'mm ' + escapeHtml_(String(printConfig.PAPER_HEIGHT_MM || 279)) + 'mm;margin:6mm;}' +
-          '@media print{body{background:#fff}.print-wrap{width:auto;margin:0;padding:0}.copy-block{page-break-inside:avoid}button{display:none}}' +
+          '.tear-line{border-top:2px dashed #666;margin:3mm 0;padding-top:2mm;text-align:center;font-size:10px;letter-spacing:.6px;}' +
+          '.nota-grid{display:grid;grid-template-columns:1.2fr 0.9fr;gap:4mm;margin-top:3mm;}' +
+          '.summary-box{border:1px solid #222;padding:2mm;display:grid;gap:1mm;}' +
+          '.summary-row{display:grid;grid-template-columns:1fr auto;gap:3mm;font-size:11px;}' +
+          '.summary-row strong{font-size:12px;}' +
+          '.terbilang-box{border:1px solid #222;padding:2mm;min-height:14mm;font-size:11px;line-height:1.35;}' +
+          '.nota-note-list{margin:0;padding-left:4mm;display:grid;gap:1mm;font-size:11px;line-height:1.3;}' +
+          '@page{size:' + escapeHtml_(String(printConfig.PAPER_WIDTH_MM || 210)) + 'mm ' + escapeHtml_(String(printConfig.PAPER_HEIGHT_MM || 297)) + 'mm;margin:5mm;}' +
+          '@media print{body{background:#fff}.print-wrap{width:auto;margin:0;padding:0}.sheet-block{page-break-inside:avoid}button{display:none}}' +
         '</style>' +
       '</head>' +
       '<body onload="window.print()">' +
         '<div class="print-wrap">' +
-          copiesHtml +
+          printBodyHtml +
         '</div>' +
       '</body>' +
       '</html>';
   }
 
-  function buildDotMatrixCopy_(data, copyLabel, withTearLine) {
-    var detailRows = buildPrintItemRows_(data.items);
+  function buildCombinedPrintSheet_(data) {
+    return '' +
+      '<section class="sheet-block">' +
+        buildSuratJalanSection_(data) +
+        '<div class="tear-line">---------------- GARIS POTONG / PERFORASI ----------------</div>' +
+        buildNotaSection_(data) +
+      '</section>';
+  }
+
+  function buildSuratJalanSection_(data) {
+    var detailRows = buildPrintSuratJalanRows_(data.items);
 
     return '' +
-      '<section class="copy-block' + (withTearLine ? '' : ' last') + '">' +
+      '<section class="doc-section">' +
         '<div class="copy-header">' +
           '<div class="brand">' +
             '<img class="brand-logo" src="' + escapeHtml_(window.APP_BOOTSTRAP.brandLogoDataUrl || '') + '" alt="ATS" />' +
             '<div>' +
-              '<div class="brand-title">SURAT JALAN</div>' +
-              '<p class="brand-subtitle">PT Abuyamas Tirta Sejahtera</p>' +
-              '<p class="brand-subtitle">Dicetak dari webapp distribusi</p>' +
+              '<div class="brand-title">PT ABUYAMAS TIRTA SEJAHTERA</div>' +
+              '<p class="brand-subtitle">Jl. Kapling Blok EO No.31 RT.01 RW.09, Cijujung, Sukaraja, Bogor, Jawa Barat 16710</p>' +
+              '<p class="brand-subtitle">Telp: 081217002021 | Email: airtismarketingats@gmail.com</p>' +
             '</div>' +
           '</div>' +
-          '<div class="copy-label">' +
-            '<div>' + escapeHtml_(copyLabel || '') + '</div>' +
+          '<div class="doc-title">' +
+            '<strong>SURAT JALAN</strong>' +
             '<strong>' + escapeHtml_(data.no_surat_jalan || '-') + '</strong>' +
-            '<div>Tanggal Kirim: ' + escapeHtml_(data.tanggal_kirim || '-') + '</div>' +
           '</div>' +
         '</div>' +
         '<div class="meta-grid">' +
+          buildPrintMetaItem_('Tanggal', formatPrintDate_(data.tanggal_kirim || data.tanggal_cetak || '')) +
+          buildPrintMetaItem_('No. SJ', data.no_surat_jalan) +
           buildPrintMetaItem_('No SO', data.no_so) +
-          buildPrintMetaItem_('Sales', data.sales_nama) +
+          buildPrintMetaItem_('No. Nota', data.no_so) +
           buildPrintMetaItem_('Customer', data.nama_customer) +
-          buildPrintMetaItem_('Kode Customer', data.customer_id) +
-          buildPrintMetaItem_('PIC Customer', data.pic_customer) +
-          buildPrintMetaItem_('No. HP', data.no_hp_customer) +
-          buildPrintMetaItem_('Driver', data.driver) +
-          buildPrintMetaItem_('Armada', data.armada) +
-          buildPrintMetaItem_('Term Pembayaran', data.term_pembayaran) +
-          buildPrintMetaItem_('Total Order', formatNumber_(data.total || 0)) +
+          buildPrintMetaItem_('PIC / HP', joinPrintValues_(data.pic_customer, data.no_hp_customer, ' / ')) +
           '<div class="full-row">' +
-            '<div class="section-title">Alamat Kirim</div>' +
+            '<div class="section-title">Alamat</div>' +
             '<div class="address-box">' + escapeHtml_(data.alamat_kirim || '-') + '</div>' +
           '</div>' +
         '</div>' +
@@ -2085,45 +2094,141 @@
           '<thead>' +
             '<tr>' +
               '<th style="width:14mm;">No</th>' +
-              '<th>Nama Barang</th>' +
-              '<th style="width:28mm;">Qty</th>' +
+              '<th>Deskripsi Barang</th>' +
+              '<th style="width:18mm;">Qty</th>' +
+              '<th style="width:16mm;">Sat</th>' +
+              '<th style="width:30mm;">Ket.</th>' +
             '</tr>' +
           '</thead>' +
           '<tbody>' + detailRows + '</tbody>' +
         '</table>' +
-        '<div style="margin-top:4mm;">' +
+        '<div class="section-gap">' +
           '<div class="section-title">Catatan</div>' +
-          '<div class="note-box">' + escapeHtml_(joinPrintValues_(data.catatan_order, data.catatan_kirim, ' | ') || '-') + '</div>' +
+          '<div class="note-box">' + escapeHtml_(buildSuratJalanNotes_(data) || '-') + '</div>' +
         '</div>' +
         '<div class="sign-grid">' +
-          buildPrintSignBox_('Pengirim') +
           buildPrintSignBox_('Penerima') +
+          buildPrintSignBox_('Gudang') +
           buildPrintSignBox_('Admin') +
+          buildPrintSignBox_('Security') +
         '</div>' +
-        (withTearLine ? '<div class="tear-line">------------------------------ SOBEK DI SINI ------------------------------</div>' : '') +
       '</section>';
   }
 
-  function buildPrintItemRows_(items) {
-    var details = Array.isArray(items) && items.length ? items : [{
-      nama_item: '',
-      qty: ''
-    }];
-    var rowsHtml = details.map(function(item, index) {
-      var qtyLabel = String(item.qty || '').trim()
-        ? formatNumber_(item.qty || 0) + (item.satuan ? ' ' + item.satuan : '')
-        : '-';
+  function buildNotaSection_(data) {
+    var detailRows = buildPrintNotaRows_(data.items);
+    var subtotal = getPrintSubtotal_(data);
+    var diskon = getPrintDiskon_(data);
+    var total = Number(data.total || 0);
 
+    return '' +
+      '<section class="doc-section last">' +
+        '<div class="copy-header">' +
+          '<div class="brand">' +
+            '<img class="brand-logo" src="' + escapeHtml_(window.APP_BOOTSTRAP.brandLogoDataUrl || '') + '" alt="ATS" />' +
+            '<div>' +
+              '<div class="brand-title">PT ABUYAMAS TIRTA SEJAHTERA</div>' +
+              '<p class="brand-subtitle">Jl. Kapling Blok EO No.31 RT.01 RW.09, Cijujung, Sukaraja, Bogor, Jawa Barat 16710</p>' +
+              '<p class="brand-subtitle">Telp: 081217002021 | Email: airtismarketingats@gmail.com</p>' +
+            '</div>' +
+          '</div>' +
+          '<div class="doc-title">' +
+            '<strong>NOTA</strong>' +
+            '<strong>' + escapeHtml_(data.no_so || '-') + '</strong>' +
+          '</div>' +
+        '</div>' +
+        '<div class="meta-grid">' +
+          buildPrintMetaItem_('Tanggal', formatPrintDate_(data.tanggal_kirim || data.tanggal_cetak || '')) +
+          buildPrintMetaItem_('No. SJ', data.no_surat_jalan) +
+          buildPrintMetaItem_('No. Nota', data.no_so) +
+          buildPrintMetaItem_('Term Bayar', data.term_pembayaran) +
+          buildPrintMetaItem_('Customer', data.nama_customer) +
+          buildPrintMetaItem_('Sales', data.sales_nama) +
+          '<div class="full-row">' +
+            '<div class="section-title">Alamat</div>' +
+            '<div class="address-box">' + escapeHtml_(data.alamat_kirim || '-') + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<table>' +
+          '<thead>' +
+            '<tr>' +
+              '<th style="width:12mm;">No</th>' +
+              '<th>Barang</th>' +
+              '<th style="width:16mm;">Qty</th>' +
+              '<th style="width:14mm;">Sat</th>' +
+              '<th style="width:24mm;">Harga</th>' +
+              '<th style="width:20mm;">Diskon</th>' +
+              '<th style="width:28mm;">Jumlah</th>' +
+            '</tr>' +
+          '</thead>' +
+          '<tbody>' + detailRows + '</tbody>' +
+        '</table>' +
+        '<div class="nota-grid">' +
+          '<div>' +
+            '<div class="section-title">Catatan Nota</div>' +
+            '<div class="note-box">' +
+              '<ul class="nota-note-list">' +
+                '<li>Periksa barang saat diterima.</li>' +
+                '<li>Pembayaran mengikuti term: ' + escapeHtml_(data.term_pembayaran || '-') + '.</li>' +
+                '<li>Catatan order: ' + escapeHtml_(joinPrintValues_(data.catatan_order, data.catatan_kirim, ' | ') || '-') + '</li>' +
+              '</ul>' +
+            '</div>' +
+            '<div class="section-title section-gap">Terbilang</div>' +
+            '<div class="terbilang-box">' + escapeHtml_(buildTerbilangRupiah_(total)) + '</div>' +
+          '</div>' +
+          '<div class="summary-box">' +
+            buildPrintSummaryRow_('Subtotal', subtotal) +
+            buildPrintSummaryRow_('Diskon', diskon) +
+            buildPrintSummaryRow_('Grand Total', total, true) +
+          '</div>' +
+        '</div>' +
+        '<div class="sign-grid">' +
+          buildPrintSignBox_('Dibuat') +
+          buildPrintSignBox_('Disetujui') +
+          buildPrintSignBox_('Pelanggan') +
+          buildPrintSignBox_('Stempel / Paraf') +
+        '</div>' +
+      '</section>';
+  }
+
+  function buildPrintSuratJalanRows_(items) {
+    var details = getPrintableItems_(items);
+    var rowsHtml = details.map(function(item, index) {
       return '' +
         '<tr>' +
           '<td>' + escapeHtml_(String(index + 1)) + '</td>' +
           '<td>' + escapeHtml_(item.nama_item || '-') + '</td>' +
-          '<td>' + escapeHtml_(qtyLabel) + '</td>' +
+          '<td>' + escapeHtml_(formatNumber_(item.qty || 0)) + '</td>' +
+          '<td>' + escapeHtml_(item.satuan || '-') + '</td>' +
+          '<td></td>' +
+        '</tr>';
+    }).join('');
+
+    while (details.length < 4) {
+      rowsHtml += '<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>';
+      details.push({});
+    }
+
+    return rowsHtml;
+  }
+
+  function buildPrintNotaRows_(items) {
+    var details = getPrintableItems_(items);
+    var rowsHtml = details.map(function(item, index) {
+      return '' +
+        '<tr>' +
+          '<td>' + escapeHtml_(String(index + 1)) + '</td>' +
+          '<td>' + escapeHtml_(item.nama_item || '-') + '</td>' +
+          '<td>' + escapeHtml_(formatNumber_(item.qty || 0)) + '</td>' +
+          '<td>' + escapeHtml_(item.satuan || '-') + '</td>' +
+          '<td>' + escapeHtml_(formatCurrencyInput_(item.harga || 0)) + '</td>' +
+          '<td>' + escapeHtml_(formatCurrencyInput_(item.diskon || 0)) + '</td>' +
+          '<td>' + escapeHtml_(formatCurrencyInput_(item.subtotal || 0)) + '</td>' +
         '</tr>';
     }).join('');
 
     while (details.length < 3) {
-      rowsHtml += '<tr><td>&nbsp;</td><td></td><td></td></tr>';
+      rowsHtml += '<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
       details.push({});
     }
 
@@ -2143,6 +2248,125 @@
       '<div class="sign-box">' +
         '<div class="sign-line">' + escapeHtml_(label) + '</div>' +
       '</div>';
+  }
+
+  function buildPrintSummaryRow_(label, value, isStrong) {
+    return '' +
+      '<div class="summary-row">' +
+        '<span>' + (isStrong ? '<strong>' + escapeHtml_(label) + '</strong>' : escapeHtml_(label)) + '</span>' +
+        '<span>' + (isStrong ? '<strong>' + escapeHtml_(formatCurrencyInput_(value || 0)) + '</strong>' : escapeHtml_(formatCurrencyInput_(value || 0))) + '</span>' +
+      '</div>';
+  }
+
+  function getPrintableItems_(items) {
+    return Array.isArray(items) && items.length ? items.slice() : [{
+      nama_item: '',
+      qty: '',
+      satuan: '',
+      harga: 0,
+      diskon: 0,
+      subtotal: 0
+    }];
+  }
+
+  function getPrintSubtotal_(data) {
+    if (Number(data.subtotal || 0) > 0) {
+      return Number(data.subtotal || 0);
+    }
+
+    return getPrintableItems_(data.items).reduce(function(result, item) {
+      return result + (Number(item.qty || 0) * Number(item.harga || 0));
+    }, 0);
+  }
+
+  function getPrintDiskon_(data) {
+    if (Number(data.diskon || 0) > 0) {
+      return Number(data.diskon || 0);
+    }
+
+    return getPrintableItems_(data.items).reduce(function(result, item) {
+      return result + Number(item.diskon || 0);
+    }, 0);
+  }
+
+  function buildSuratJalanNotes_(data) {
+    var notes = [];
+    var picHp = joinPrintValues_(data.pic_customer, data.no_hp_customer, ' / ');
+
+    if (picHp) {
+      notes.push('PIC / HP: ' + picHp);
+    }
+
+    if (data.catatan_order) {
+      notes.push('Order: ' + data.catatan_order);
+    }
+
+    if (data.catatan_kirim) {
+      notes.push('Kirim: ' + data.catatan_kirim);
+    }
+
+    return notes.join('\n');
+  }
+
+  function formatPrintDate_(value) {
+    var text = String(value || '').trim();
+    var match = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+    if (!match) {
+      return text || '-';
+    }
+
+    return match[3] + '/' + match[2] + '/' + match[1];
+  }
+
+  function buildTerbilangRupiah_(value) {
+    var amount = Math.floor(Number(value || 0));
+
+    if (amount <= 0) {
+      return 'Nol rupiah';
+    }
+
+    return toTitleCaseWords_(numberToBahasaWords_(amount).trim()) + ' rupiah';
+  }
+
+  function numberToBahasaWords_(value) {
+    var angka = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
+
+    value = Math.floor(Number(value || 0));
+
+    if (value < 12) {
+      return angka[value];
+    }
+
+    if (value < 20) {
+      return numberToBahasaWords_(value - 10) + ' belas';
+    }
+
+    if (value < 100) {
+      return numberToBahasaWords_(Math.floor(value / 10)) + ' puluh ' + numberToBahasaWords_(value % 10);
+    }
+
+    if (value < 200) {
+      return 'seratus ' + numberToBahasaWords_(value - 100);
+    }
+
+    if (value < 1000) {
+      return numberToBahasaWords_(Math.floor(value / 100)) + ' ratus ' + numberToBahasaWords_(value % 100);
+    }
+
+    if (value < 2000) {
+      return 'seribu ' + numberToBahasaWords_(value - 1000);
+    }
+
+    if (value < 1000000) {
+      return numberToBahasaWords_(Math.floor(value / 1000)) + ' ribu ' + numberToBahasaWords_(value % 1000);
+    }
+
+    if (value < 1000000000) {
+      return numberToBahasaWords_(Math.floor(value / 1000000)) + ' juta ' + numberToBahasaWords_(value % 1000000);
+    }
+
+    return String(value);
   }
 
   function joinPrintValues_(firstValue, secondValue, separator) {

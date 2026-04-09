@@ -72,6 +72,8 @@ function getSuratJalanPrintData(noSo) {
     pic_customer: salesOrder.pic_customer || '',
     no_hp_customer: salesOrder.no_hp_customer || '',
     term_pembayaran: salesOrder.term_pembayaran || '',
+    subtotal: orderDisplay.subtotal_order || salesOrder.subtotal || '',
+    diskon: orderDisplay.diskon_order || salesOrder.diskon || '',
     total: orderDisplay.total_order || salesOrder.total || '',
     catatan_order: salesOrder.catatan || ''
   };

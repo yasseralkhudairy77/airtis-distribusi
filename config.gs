@@ -31,8 +31,8 @@ var APP_CONFIG = {
   CUSTOMER_TYPE: ['Lama', 'Baru'],
   PRINT: {
     MODE: 'DOT_MATRIX',
-    PAPER_WIDTH_MM: 241,
-    PAPER_HEIGHT_MM: 279,
+    PAPER_WIDTH_MM: 210,
+    PAPER_HEIGHT_MM: 297,
     FONT_FAMILY: '"Courier New", monospace',
     FONT_SIZE_PX: 13,
     COPY_LABELS: ['Lembar Gudang', 'Lembar Customer']
