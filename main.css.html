@@ -214,6 +214,42 @@
     display: block;
   }
 
+  .approver-subtabs {
+    display: flex;
+    gap: 8px;
+    margin: 0 0 20px;
+    padding: 8px;
+    background: #f8fafc;
+    border: 1px solid var(--sap-border);
+    border-radius: 8px;
+    flex-wrap: wrap;
+  }
+
+  .approver-subtab-btn {
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--sap-text);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .approver-subtab-btn.active {
+    background: var(--sap-blue);
+    border-color: var(--sap-blue);
+    color: #fff;
+  }
+
+  .approver-view-panel {
+    display: none;
+  }
+
+  .approver-view-panel.active {
+    display: block;
+  }
+
   .order-form {
     display: grid;
     gap: 16px;
@@ -1133,12 +1169,14 @@
       padding: 10px 14px;
     }
 
-    .admin-subtabs {
+    .admin-subtabs,
+    .approver-subtabs {
       gap: 6px;
       padding: 6px;
     }
 
-    .admin-subtab-btn {
+    .admin-subtab-btn,
+    .approver-subtab-btn {
       flex: 1 1 0;
       min-height: 42px;
       text-align: center;

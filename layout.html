@@ -245,112 +245,121 @@
         </section>
 
         <section class="tab-panel hidden" id="tab-approver" data-role="approver">
-          <section class="form-card">
-            <div class="panel-header">
-              <div>
-                <h2>Harga Dasar Item</h2>
-                <p class="panel-subtitle">Sumber harga global untuk sales dan CS/Admin. Harga di bawah batas ini akan masuk approval.</p>
+          <div class="approver-subtabs" id="approverSubtabs">
+            <button type="button" class="approver-subtab-btn active" data-approver-view="approval">Approval Order</button>
+            <button type="button" class="approver-subtab-btn" data-approver-view="pricing">Harga Dasar Item</button>
+          </div>
+
+          <section class="approver-view-panel active" id="approver-view-approval">
+            <section class="form-card">
+              <div class="panel-header">
+                <div>
+                  <h2>Approval Order</h2>
+                  <p class="panel-subtitle">Daftar order yang butuh keputusan approver, diringkas supaya cepat dibaca dan ringan dipakai.</p>
+                </div>
+                <button type="button" class="ghost-btn" id="refreshApproverBtn">Refresh</button>
               </div>
-            </div>
 
-            <div class="form-grid">
-              <label class="field">
-                <span>Cari Item</span>
-                <input id="approver_price_search" type="text" placeholder="Cari kode item atau nama produk" />
-              </label>
-            </div>
+              <div class="form-grid">
+                <label class="field">
+                  <span>Approver</span>
+                  <select id="approver_id"></select>
+                </label>
+                <label class="field">
+                  <span>Cari Approval</span>
+                  <input id="approver_search" type="text" placeholder="Cari No SO, customer, sales, atau item" />
+                </label>
+              </div>
 
-            <div class="summary-grid approver-summary-grid">
-              <article class="summary-card">
-                <span class="summary-label">Item Aktif</span>
-                <strong class="summary-value" id="summaryBasePriceItems">0</strong>
-                <span class="summary-note">Produk aktif yang bisa dijual di sales dan CS/Admin</span>
-              </article>
-              <article class="summary-card">
-                <span class="summary-label">Harga Sudah Diisi</span>
-                <strong class="summary-value" id="summaryBasePriceReady">0</strong>
-                <span class="summary-note">Produk yang sudah punya harga dasar approver</span>
-              </article>
-              <article class="summary-card">
-                <span class="summary-label">Belum Diisi</span>
-                <strong class="summary-value" id="summaryBasePriceMissing">0</strong>
-                <span class="summary-note">Produk ini belum bisa dipakai kalau harga dasar masih kosong</span>
-              </article>
-            </div>
+              <div class="summary-grid approver-summary-grid">
+                <article class="summary-card">
+                  <span class="summary-label">Perlu Keputusan</span>
+                  <strong class="summary-value" id="summaryApprovalPending">0</strong>
+                  <span class="summary-note">Jumlah order yang masih menunggu approve atau reject</span>
+                </article>
+                <article class="summary-card">
+                  <span class="summary-label">Customer Ditahan</span>
+                  <strong class="summary-value" id="summaryApprovalHeld">0</strong>
+                  <span class="summary-note">Prioritas tertinggi karena status customer ditahan</span>
+                </article>
+                <article class="summary-card">
+                  <span class="summary-label">Ada Tunggakan</span>
+                  <strong class="summary-value" id="summaryApprovalOverdue">0</strong>
+                  <span class="summary-note">Order dengan overdue, jatuh tempo, atau total tunggakan</span>
+                </article>
+              </div>
 
-            <div class="table-wrap">
-              <table class="data-table approver-price-table">
-                <thead>
-                  <tr>
-                    <th>Kode</th>
-                    <th>Produk</th>
-                    <th>Satuan</th>
-                    <th>Harga Dasar</th>
-                    <th>Update</th>
-                    <th>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody id="approverPriceTableBody">
-                  <tr><td colspan="6" class="empty-cell">Belum ada data item.</td></tr>
-                </tbody>
-              </table>
-            </div>
+              <div class="table-wrap">
+                <table class="data-table approver-table">
+                  <thead>
+                    <tr>
+                      <th>No SO</th>
+                      <th>Customer &amp; Sales</th>
+                      <th>Ringkasan Order</th>
+                      <th>Risiko Approval</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="approverTableBody">
+                    <tr><td colspan="5" class="empty-cell">Belum ada data approval.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
           </section>
 
-          <section class="form-card">
-            <div class="panel-header">
-              <div>
-                <h2>Approval Order</h2>
-                <p class="panel-subtitle">Daftar order yang butuh keputusan approver, diringkas supaya cepat dibaca dan ringan dipakai.</p>
+          <section class="approver-view-panel" id="approver-view-pricing">
+            <section class="form-card">
+              <div class="panel-header">
+                <div>
+                  <h2>Harga Dasar Item</h2>
+                  <p class="panel-subtitle">Sumber harga global untuk sales dan CS/Admin. Harga di bawah batas ini akan masuk approval.</p>
+                </div>
               </div>
-              <button type="button" class="ghost-btn" id="refreshApproverBtn">Refresh</button>
-            </div>
 
-            <div class="form-grid">
-              <label class="field">
-                <span>Approver</span>
-                <select id="approver_id"></select>
-              </label>
-              <label class="field">
-                <span>Cari Approval</span>
-                <input id="approver_search" type="text" placeholder="Cari No SO, customer, sales, atau item" />
-              </label>
-            </div>
+              <div class="form-grid">
+                <label class="field">
+                  <span>Cari Item</span>
+                  <input id="approver_price_search" type="text" placeholder="Cari kode item atau nama produk" />
+                </label>
+              </div>
 
-            <div class="summary-grid approver-summary-grid">
-              <article class="summary-card">
-                <span class="summary-label">Perlu Keputusan</span>
-                <strong class="summary-value" id="summaryApprovalPending">0</strong>
-                <span class="summary-note">Jumlah order yang masih menunggu approve atau reject</span>
-              </article>
-              <article class="summary-card">
-                <span class="summary-label">Customer Ditahan</span>
-                <strong class="summary-value" id="summaryApprovalHeld">0</strong>
-                <span class="summary-note">Prioritas tertinggi karena status customer ditahan</span>
-              </article>
-              <article class="summary-card">
-                <span class="summary-label">Ada Tunggakan</span>
-                <strong class="summary-value" id="summaryApprovalOverdue">0</strong>
-                <span class="summary-note">Order dengan overdue, jatuh tempo, atau total tunggakan</span>
-              </article>
-            </div>
+              <div class="summary-grid approver-summary-grid">
+                <article class="summary-card">
+                  <span class="summary-label">Item Aktif</span>
+                  <strong class="summary-value" id="summaryBasePriceItems">0</strong>
+                  <span class="summary-note">Produk aktif yang bisa dijual di sales dan CS/Admin</span>
+                </article>
+                <article class="summary-card">
+                  <span class="summary-label">Harga Sudah Diisi</span>
+                  <strong class="summary-value" id="summaryBasePriceReady">0</strong>
+                  <span class="summary-note">Produk yang sudah punya harga dasar approver</span>
+                </article>
+                <article class="summary-card">
+                  <span class="summary-label">Belum Diisi</span>
+                  <strong class="summary-value" id="summaryBasePriceMissing">0</strong>
+                  <span class="summary-note">Produk ini belum bisa dipakai kalau harga dasar masih kosong</span>
+                </article>
+              </div>
 
-            <div class="table-wrap">
-              <table class="data-table approver-table">
-                <thead>
-                  <tr>
-                    <th>No SO</th>
-                    <th>Customer &amp; Sales</th>
-                    <th>Ringkasan Order</th>
-                    <th>Risiko Approval</th>
-                    <th>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody id="approverTableBody">
-                  <tr><td colspan="5" class="empty-cell">Belum ada data approval.</td></tr>
-                </tbody>
-              </table>
-            </div>
+              <div class="table-wrap">
+                <table class="data-table approver-price-table">
+                  <thead>
+                    <tr>
+                      <th>Kode</th>
+                      <th>Produk</th>
+                      <th>Satuan</th>
+                      <th>Harga Dasar</th>
+                      <th>Update</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="approverPriceTableBody">
+                    <tr><td colspan="6" class="empty-cell">Belum ada data item.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
           </section>
         </section>
 

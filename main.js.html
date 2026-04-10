@@ -56,6 +56,11 @@
         activateAdminView_(button.dataset.adminView);
       });
     });
+    document.querySelectorAll('.approver-subtab-btn').forEach(function(button) {
+      button.addEventListener('click', function() {
+        activateApproverView_(button.dataset.approverView);
+      });
+    });
 
     document.getElementById('sales_id').addEventListener('change', handleSalesChange_);
     document.getElementById('customer_id').addEventListener('change', handleCustomerChange_);
@@ -1745,6 +1750,9 @@
       if (roleKey === 'cs_admin') {
         activateAdminView_('operations');
       }
+      if (roleKey === 'approver') {
+        activateApproverView_('approval');
+      }
       activateTab_(roleKey === 'cs_admin' ? 'admin' : roleKey);
     }
   }
@@ -1837,6 +1845,18 @@
 
     document.querySelectorAll('.admin-view-panel').forEach(function(panel) {
       panel.classList.toggle('active', panel.id === 'admin-view-' + targetView);
+    });
+  }
+
+  function activateApproverView_(viewName) {
+    var targetView = viewName === 'pricing' ? 'pricing' : 'approval';
+
+    document.querySelectorAll('.approver-subtab-btn').forEach(function(button) {
+      button.classList.toggle('active', button.dataset.approverView === targetView);
+    });
+
+    document.querySelectorAll('.approver-view-panel').forEach(function(panel) {
+      panel.classList.toggle('active', panel.id === 'approver-view-' + targetView);
     });
   }
 
