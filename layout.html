@@ -249,7 +249,7 @@
             <div class="panel-header">
               <div>
                 <h2>Approval Order</h2>
-                <p class="panel-subtitle">Daftar order yang membutuhkan persetujuan karena tunggakan atau pengecualian.</p>
+                <p class="panel-subtitle">Daftar order yang butuh keputusan approver, diringkas supaya cepat dibaca dan ringan dipakai.</p>
               </div>
               <button type="button" class="ghost-btn" id="refreshApproverBtn">Refresh</button>
             </div>
@@ -259,24 +259,43 @@
                 <span>Approver</span>
                 <select id="approver_id"></select>
               </label>
+              <label class="field">
+                <span>Cari Approval</span>
+                <input id="approver_search" type="text" placeholder="Cari No SO, customer, sales, atau item" />
+              </label>
+            </div>
+
+            <div class="summary-grid approver-summary-grid">
+              <article class="summary-card">
+                <span class="summary-label">Perlu Keputusan</span>
+                <strong class="summary-value" id="summaryApprovalPending">0</strong>
+                <span class="summary-note">Jumlah order yang masih menunggu approve atau reject</span>
+              </article>
+              <article class="summary-card">
+                <span class="summary-label">Customer Ditahan</span>
+                <strong class="summary-value" id="summaryApprovalHeld">0</strong>
+                <span class="summary-note">Prioritas tertinggi karena status customer ditahan</span>
+              </article>
+              <article class="summary-card">
+                <span class="summary-label">Ada Tunggakan</span>
+                <strong class="summary-value" id="summaryApprovalOverdue">0</strong>
+                <span class="summary-note">Order dengan overdue, jatuh tempo, atau total tunggakan</span>
+              </article>
             </div>
 
             <div class="table-wrap">
-              <table class="data-table">
+              <table class="data-table approver-table">
                 <thead>
                   <tr>
                     <th>No SO</th>
-                    <th>Customer</th>
-                    <th>Item</th>
-                    <th>Status Bayar</th>
-                    <th>Tunggakan</th>
-                    <th>Total</th>
-                    <th>Alasan</th>
+                    <th>Customer &amp; Sales</th>
+                    <th>Ringkasan Order</th>
+                    <th>Risiko Approval</th>
                     <th>Aksi</th>
                   </tr>
                 </thead>
                 <tbody id="approverTableBody">
-                  <tr><td colspan="8" class="empty-cell">Belum ada data approval.</td></tr>
+                  <tr><td colspan="5" class="empty-cell">Belum ada data approval.</td></tr>
                 </tbody>
               </table>
             </div>

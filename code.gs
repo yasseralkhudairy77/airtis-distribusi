@@ -75,6 +75,7 @@ function getApproverDashboardData(userId) {
     approvers: [currentUser],
     approvals: approvals.map(function(approval) {
       var order = buildSalesOrderClientRow_(findSalesOrderByNoSo_(approval.no_so) || {});
+      var customer = findCustomerByCode_(order.customer_id);
 
       return {
         no_so: approval.no_so,
@@ -89,7 +90,9 @@ function getApproverDashboardData(userId) {
         qty: order.qty_summary || order.qty || '',
         details: order.details || [],
         total: order.total_order || order.total || '',
+        sales_nama: order.sales_nama || '',
         status_order: order.status_order || '',
+        status_customer: customer ? (customer.status_customer || '') : '',
         status_pembayaran_customer: order.status_pembayaran_customer || '',
         total_tunggakan: order.total_tunggakan || '',
         jumlah_nota_overdue: order.jumlah_nota_overdue || '',

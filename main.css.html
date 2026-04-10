@@ -816,6 +816,57 @@
     min-width: 160px;
   }
 
+  .approver-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-bottom: 16px;
+  }
+
+  .approver-table td {
+    vertical-align: top;
+  }
+
+  .approver-customer-cell,
+  .approver-order-cell,
+  .approver-risk-cell,
+  .approver-action-stack {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .approver-customer-cell strong,
+  .approver-order-total strong {
+    font-size: 13px;
+    color: var(--sap-text);
+  }
+
+  .approver-meta {
+    display: grid;
+    gap: 4px;
+  }
+
+  .approver-meta-line {
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--sap-muted);
+  }
+
+  .approver-meta-line strong {
+    color: var(--sap-text);
+  }
+
+  .approver-order-total {
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--sap-muted);
+    padding-top: 4px;
+    border-top: 1px dashed #d7e2ec;
+  }
+
+  .approver-risk-badges {
+    align-items: center;
+  }
+
   .risk-summary {
     display: grid;
     gap: 4px;
@@ -876,6 +927,10 @@
 
   .mini-input {
     min-width: 130px;
+  }
+
+  .approver-note-input {
+    min-width: 220px;
   }
 
   .result-card {
@@ -986,6 +1041,14 @@
   }
 
   @media (max-width: 760px) {
+    .approver-summary-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .approver-note-input {
+      min-width: 100%;
+    }
+
     .app-shell {
       padding: 0;
     }

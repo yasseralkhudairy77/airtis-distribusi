@@ -10,6 +10,7 @@
     adminOrderItems: [],
     approvals: [],
     approvers: [],
+    approverSearch: '',
     readyOrders: [],
     deliveryOrders: [],
     deliveryFilterDate: '',
@@ -71,6 +72,7 @@
     document.getElementById('loginForm').addEventListener('submit', submitLoginForm_);
     document.getElementById('logoutBtn').addEventListener('click', handleLogout_);
     document.getElementById('refreshApproverBtn').addEventListener('click', loadApproverData_);
+    document.getElementById('approver_search').addEventListener('input', handleApproverSearchInput_);
     document.getElementById('refreshAdminBtn').addEventListener('click', loadAdminData_);
     document.getElementById('deliveryFilterDate').addEventListener('change', handleDeliveryFilterChange_);
     document.getElementById('deliveryFilterTodayBtn').addEventListener('click', handleDeliveryFilterToday_);
@@ -167,9 +169,12 @@
 
           appState.approvals = Array.isArray(payload.approvals) ? payload.approvals : [];
           appState.approvers = Array.isArray(payload.approvers) ? payload.approvers : [];
+          appState.approverSearch = '';
           syncCurrentUser_(payload.currentUser);
 
           renderApproverOptions_();
+          renderApproverSummary_();
+          setFieldValue_('approver_search', '');
           renderApproverTable_();
 
           if (callback) callback();
@@ -334,33 +339,202 @@
 
   function renderApproverTable_() {
     var tbody = document.getElementById('approverTableBody');
+    var approvals;
     if (!tbody) return;
 
     if (!appState.approvals.length) {
-      tbody.innerHTML = '<tr><td colspan="8" class="empty-cell">Belum ada data approval.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">Belum ada data approval.</td></tr>';
       return;
     }
 
-    tbody.innerHTML = appState.approvals.map(function(row) {
+    approvals = getFilteredApprovals_();
+
+    if (!approvals.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">Approval tidak ditemukan. Coba kata kunci lain.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = approvals.map(function(row) {
       var noSo = String(row.no_so || '');
-      var tunggakanHtml = buildApprovalRiskSummary_(row);
 
       return '' +
         '<tr>' +
           '<td>' + escapeHtml_(noSo) + '</td>' +
-          '<td>' + escapeHtml_(row.customer) + '</td>' +
-          '<td>' + buildOrderDetailCellHtml_(row) + '</td>' +
-          '<td>' + buildPaymentBadge_(row.status_pembayaran_customer) + '</td>' +
-          '<td>' + tunggakanHtml + '</td>' +
-          '<td>' + formatNumber_(row.total) + '</td>' +
-          '<td>' + escapeHtml_(row.alasan_approval) + '</td>' +
-          '<td><div class="inline-actions">' +
-            '<input class="mini-input" id="approval-note-' + escapeHtml_(noSo) + '" type="text" placeholder="Catatan wajib" />' +
-            '<button type="button" class="approve-btn" onclick="handleApproveOrder(\'' + escapeJs_(noSo) + '\')">Approve</button>' +
-            '<button type="button" class="danger-btn" onclick="handleRejectOrder(\'' + escapeJs_(noSo) + '\')">Reject</button>' +
-          '</div></td>' +
+          '<td>' + buildApproverCustomerCellHtml_(row) + '</td>' +
+          '<td>' + buildApproverOrderCellHtml_(row) + '</td>' +
+          '<td>' + buildApproverRiskSummary_(row) + '</td>' +
+          '<td>' + buildApproverActionsHtml_(noSo) + '</td>' +
         '</tr>';
     }).join('');
+  }
+
+  function renderApproverSummary_() {
+    var approvals = appState.approvals || [];
+
+    setText_('summaryApprovalPending', String(approvals.length || 0));
+    setText_('summaryApprovalHeld', String(approvals.filter(function(row) {
+      return normalizeClientText_(row.status_customer) === 'ditahan';
+    }).length));
+    setText_('summaryApprovalOverdue', String(approvals.filter(function(row) {
+      return Number(row.total_tunggakan || 0) > 0 ||
+        Number(row.jumlah_nota_overdue || 0) > 0 ||
+        String(row.tanggal_jatuh_tempo_terdekat || '').trim() !== '';
+    }).length));
+  }
+
+  function getFilteredApprovals_() {
+    var query = normalizeSearchText_(appState.approverSearch);
+
+    return (appState.approvals || []).slice().sort(compareApprovalsByPriority_).filter(function(row) {
+      var haystack;
+
+      if (!query) {
+        return true;
+      }
+
+      haystack = [
+        row.no_so,
+        row.customer,
+        row.sales_nama,
+        row.diajukan_oleh,
+        row.item,
+        row.alasan_approval,
+        row.status_customer
+      ].map(normalizeSearchText_).join(' ');
+
+      return haystack.indexOf(query) !== -1;
+    });
+  }
+
+  function compareApprovalsByPriority_(left, right) {
+    return getApprovalPriorityScore_(right) - getApprovalPriorityScore_(left);
+  }
+
+  function getApprovalPriorityScore_(row) {
+    var score = 0;
+
+    if (normalizeClientText_(row.status_customer) === 'ditahan') {
+      score += 10000;
+    }
+
+    if (normalizeClientText_(row.status_pembayaran_customer) === 'ditahan') {
+      score += 6000;
+    }
+
+    score += Number(row.jumlah_nota_overdue || 0) * 100;
+    score += Math.floor(Number(row.total_tunggakan || 0) / 100000);
+
+    if (String(row.tanggal_jatuh_tempo_terdekat || '').trim()) {
+      score += 25;
+    }
+
+    return score;
+  }
+
+  function buildApproverCustomerCellHtml_(row) {
+    var metaLines = [];
+
+    if (row.sales_nama) {
+      metaLines.push('<div class="approver-meta-line"><strong>Sales Order:</strong> ' + escapeHtml_(row.sales_nama) + '</div>');
+    }
+
+    if (row.diajukan_oleh) {
+      metaLines.push('<div class="approver-meta-line"><strong>Diajukan Oleh:</strong> ' + escapeHtml_(row.diajukan_oleh) + '</div>');
+    }
+
+    if (row.tanggal_pengajuan) {
+      metaLines.push('<div class="approver-meta-line"><strong>Tanggal:</strong> ' + escapeHtml_(row.tanggal_pengajuan) + '</div>');
+    }
+
+    return '' +
+      '<div class="approver-customer-cell">' +
+        '<strong>' + escapeHtml_(row.customer || '-') + '</strong>' +
+        '<div class="approver-meta">' + metaLines.join('') + '</div>' +
+      '</div>';
+  }
+
+  function buildApproverOrderCellHtml_(row) {
+    return '' +
+      '<div class="approver-order-cell">' +
+        buildOrderDetailCellHtml_(row) +
+        '<div class="approver-order-total"><strong>Total:</strong> Rp ' + escapeHtml_(formatNumber_(row.total || 0)) + '</div>' +
+      '</div>';
+  }
+
+  function buildApproverRiskSummary_(row) {
+    var lines = [];
+    var badges = [];
+    var alasanApproval = String(row.alasan_approval || '').trim();
+    var statusCustomer = normalizeClientText_(row.status_customer);
+    var statusPembayaran = String(row.status_pembayaran_customer || '').trim();
+    var jumlahNota = Number(row.jumlah_nota_overdue || 0);
+    var totalTunggakan = Number(row.total_tunggakan || 0);
+    var jatuhTempo = String(row.tanggal_jatuh_tempo_terdekat || '').trim();
+    var catatan = String(row.catatan_piutang || '').trim();
+
+    if (statusPembayaran) {
+      badges.push(buildPaymentBadge_(statusPembayaran));
+    }
+
+    if (String(row.status_customer || '').trim()) {
+      badges.push(buildStatusBadge_(row.status_customer));
+    }
+
+    if (statusCustomer === 'ditahan') {
+      lines.push('Status customer ditahan');
+    }
+
+    if (jumlahNota > 0) {
+      lines.push('Customer menunggak ' + jumlahNota + ' nota');
+    }
+
+    if (totalTunggakan > 0) {
+      lines.push('Total tunggakan Rp ' + formatNumber_(totalTunggakan));
+    }
+
+    if (jatuhTempo) {
+      lines.push('JT terdekat ' + jatuhTempo);
+    }
+
+    if (alasanApproval && !isDuplicateApprovalReason_(alasanApproval, lines)) {
+      lines.push(alasanApproval);
+    }
+
+    if (catatan) {
+      lines.push('Catatan piutang: ' + catatan);
+    }
+
+    if (!lines.length) {
+      lines.push('Perlu persetujuan manual');
+    }
+
+    return '' +
+      '<div class="approver-risk-cell">' +
+        (badges.length ? '<div class="inline-actions approver-risk-badges">' + badges.join('') + '</div>' : '') +
+        '<div class="risk-summary">' + lines.map(function(line) {
+          return '<div class="risk-line">- ' + escapeHtml_(line) + '</div>';
+        }).join('') + '</div>' +
+      '</div>';
+  }
+
+  function buildApproverActionsHtml_(noSo) {
+    return '' +
+      '<div class="approver-action-stack">' +
+        '<input class="mini-input approver-note-input" id="approval-note-' + escapeHtml_(noSo) + '" type="text" placeholder="Catatan keputusan wajib" />' +
+        '<div class="inline-actions">' +
+          '<button type="button" class="approve-btn" onclick="handleApproveOrder(\'' + escapeJs_(noSo) + '\')">Approve</button>' +
+          '<button type="button" class="danger-btn" onclick="handleRejectOrder(\'' + escapeJs_(noSo) + '\')">Reject</button>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function isDuplicateApprovalReason_(reason, existingLines) {
+    var normalizedReason = normalizeSearchText_(reason);
+
+    return (existingLines || []).some(function(line) {
+      return normalizeSearchText_(line).indexOf(normalizedReason) !== -1 ||
+        normalizedReason.indexOf(normalizeSearchText_(line)) !== -1;
+    });
   }
 
   function renderReadyOrderTable_() {
@@ -440,6 +614,11 @@
   function handleDeliveryFilterChange_() {
     appState.deliveryFilterDate = normalizeDateKey_(getFieldValue_('deliveryFilterDate'));
     renderDeliveryTable_();
+  }
+
+  function handleApproverSearchInput_() {
+    appState.approverSearch = getFieldValue_('approver_search');
+    renderApproverTable_();
   }
 
   function handleDeliveryFilterToday_() {
@@ -2000,6 +2179,8 @@
     var className = 'ready';
 
     if (normalized === 'menunggu persetujuan') {
+      className = 'warning';
+    } else if (normalized === 'menunggak') {
       className = 'warning';
     } else if (normalized === 'ditahan' || normalized === 'ditolak') {
       className = 'danger';
