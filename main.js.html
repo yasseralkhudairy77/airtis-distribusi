@@ -847,10 +847,10 @@
 
     google.script.run
       .withSuccessHandler(function(result) {
-        downloadBase64File_(
-          result.file_name || ('kledo-' + noSo + '.xlsx'),
-          result.file_content_base64 || '',
-          result.mime_type || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        downloadTextFile_(
+          result.file_name || ('kledo-' + noSo + '.xls'),
+          result.file_content || '',
+          result.mime_type || 'application/vnd.ms-excel;charset=utf-8;'
         );
         setStatusText_('File Kledo berhasil dibuat');
         renderResult_('File export Kledo untuk order ' + result.no_so + ' berhasil diunduh.', false);
@@ -2862,29 +2862,6 @@
 
     link.href = url;
     link.download = fileName || 'download.txt';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }
-
-  function downloadBase64File_(fileName, base64Content, mimeType) {
-    var binary = atob(base64Content || '');
-    var bytes = new Uint8Array(binary.length);
-    var index;
-    var blob;
-    var url;
-    var link;
-
-    for (index = 0; index < binary.length; index += 1) {
-      bytes[index] = binary.charCodeAt(index);
-    }
-
-    blob = new Blob([bytes], { type: mimeType || 'application/octet-stream' });
-    url = URL.createObjectURL(blob);
-    link = document.createElement('a');
-    link.href = url;
-    link.download = fileName || 'download.bin';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

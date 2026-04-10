@@ -229,7 +229,7 @@ function generateKledoExportFile(noSo, currentUser) {
   var salesOrder = buildSalesOrderClientRow_(findSalesOrderByNoSo_(noSo) || {});
   var suratJalan = findSuratJalanByNoSo_(noSo) || {};
   var exportRows;
-  var workbookBlob;
+  var workbookXml;
   var fileName;
 
   if (!salesOrder.no_so) {
@@ -245,19 +245,19 @@ function generateKledoExportFile(noSo, currentUser) {
   }
 
   exportRows = buildKledoExportRows_(salesOrder, suratJalan);
-  workbookBlob = buildKledoExportWorkbook_([APP_CONFIG.KLEDO_EXPORT.HEADERS].concat(exportRows));
+  workbookXml = buildKledoExportWorkbookXml_([APP_CONFIG.KLEDO_EXPORT.HEADERS].concat(exportRows));
   fileName = [
     APP_CONFIG.KLEDO_EXPORT.FILE_PREFIX,
     String(salesOrder.no_so || '').replace(/[^A-Za-z0-9_-]/g, '_'),
     Utilities.formatDate(new Date(), APP_CONFIG.TIMEZONE, 'yyyyMMdd-HHmmss')
-  ].join('-') + '.xlsx';
+  ].join('-') + '.xls';
 
   return {
     success: true,
     no_so: salesOrder.no_so,
     file_name: fileName,
-    mime_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    file_content_base64: Utilities.base64Encode(workbookBlob.getBytes())
+    mime_type: 'application/vnd.ms-excel;charset=utf-8;',
+    file_content: workbookXml
   };
 }
 
@@ -360,35 +360,38 @@ function formatKledoDate_(value) {
   return [match[3], match[2], match[1]].join('/');
 }
 
-function buildKledoExportWorkbook_(rows) {
-  var spreadsheet = SpreadsheetApp.create('TEMP KLEDO EXPORT');
-  var sheet = spreadsheet.getSheets()[0];
-  var file = DriveApp.getFileById(spreadsheet.getId());
-  var exportUrl = 'https://docs.google.com/spreadsheets/d/' + spreadsheet.getId() + '/export?format=xlsx';
-  var response;
-  var blob;
+function buildKledoExportWorkbookXml_(rows) {
+  var safeRows = Array.isArray(rows) ? rows : [];
+  var rowXml = safeRows.map(function(row) {
+    return '<Row>' + (Array.isArray(row) ? row : []).map(function(cell) {
+      return '<Cell><Data ss:Type="String">' + escapeXml_(cell) + '</Data></Cell>';
+    }).join('') + '</Row>';
+  }).join('');
 
-  try {
-    sheet.setName('Kledo Import');
+  return [
+    '<?xml version="1.0"?>',
+    '<?mso-application progid="Excel.Sheet"?>',
+    '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"',
+    ' xmlns:o="urn:schemas-microsoft-com:office:office"',
+    ' xmlns:x="urn:schemas-microsoft-com:office:excel"',
+    ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"',
+    ' xmlns:html="http://www.w3.org/TR/REC-html40">',
+    '<Worksheet ss:Name="Kledo Import">',
+    '<Table>',
+    rowXml,
+    '</Table>',
+    '</Worksheet>',
+    '</Workbook>'
+  ].join('');
+}
 
-    if (Array.isArray(rows) && rows.length) {
-      sheet.getRange(1, 1, rows.length, rows[0].length).setValues(rows);
-      sheet.setFrozenRows(1);
-    }
-
-    response = UrlFetchApp.fetch(exportUrl, {
-      headers: {
-        Authorization: 'Bearer ' + ScriptApp.getOAuthToken()
-      },
-      muteHttpExceptions: false
-    });
-
-    blob = response.getBlob();
-    blob.setName('kledo-export.xlsx');
-    return blob;
-  } finally {
-    file.setTrashed(true);
-  }
+function escapeXml_(value) {
+  return String(value === undefined || value === null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
 
 function testCreateSuratJalanFromLatestReadyOrder() {
