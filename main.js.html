@@ -27,6 +27,7 @@
 
   document.addEventListener('DOMContentLoaded', function() {
     try {
+      exposeGlobalActionHandlers_();
       bindEvents();
       setTodayAsDefault_();
       initializeApp_();
@@ -128,6 +129,13 @@
         closeDeliveryVerificationModal_();
       }
     });
+  }
+
+  function exposeGlobalActionHandlers_() {
+    window.addSalesItem_ = addSalesItem_;
+    window.addAdminItem_ = addAdminItem_;
+    window.removeSalesItem_ = removeSalesItem_;
+    window.removeAdminItem_ = removeAdminItem_;
   }
 
   function loadAllData_() {
@@ -1379,21 +1387,26 @@
   }
 
   function addSalesItem_() {
-    var draftItem = collectSalesItemDraft_();
+    try {
+      var draftItem = collectSalesItemDraft_();
 
-    if (draftItem.validationMessage) {
-      setStatusText_('Detail item belum lengkap');
-      renderResult_(draftItem.validationMessage, true);
-      return;
-    }
+      if (draftItem.validationMessage) {
+        setStatusText_('Detail item belum lengkap');
+        renderResult_(draftItem.validationMessage, true);
+        return;
+      }
 
-    appState.salesOrderItems.push(draftItem.item);
-    renderSalesOrderItems_();
-    resetSalesItemDraft_();
-    if (draftItem.item.butuh_persetujuan_harga) {
-      setStatusText_('Item ditambahkan, harga di bawah harga dasar akan masuk approval');
-    } else {
-      setStatusText_('Item berhasil ditambahkan ke sales order');
+      appState.salesOrderItems.push(draftItem.item);
+      renderSalesOrderItems_();
+      resetSalesItemDraft_();
+      if (draftItem.item.butuh_persetujuan_harga) {
+        setStatusText_('Item ditambahkan, harga di bawah harga dasar akan masuk approval');
+      } else {
+        setStatusText_('Item berhasil ditambahkan ke sales order');
+      }
+    } catch (error) {
+      setStatusText_('Gagal tambah item');
+      renderResult_('Gagal tambah item: ' + (error && error.message ? error.message : error), true);
     }
   }
 
@@ -1406,21 +1419,26 @@
   }
 
   function addAdminItem_() {
-    var draftItem = collectAdminItemDraft_();
+    try {
+      var draftItem = collectAdminItemDraft_();
 
-    if (draftItem.validationMessage) {
-      setStatusText_('Detail item agen belum lengkap');
-      renderResult_(draftItem.validationMessage, true);
-      return;
-    }
+      if (draftItem.validationMessage) {
+        setStatusText_('Detail item agen belum lengkap');
+        renderResult_(draftItem.validationMessage, true);
+        return;
+      }
 
-    appState.adminOrderItems.push(draftItem.item);
-    renderAdminOrderItems_();
-    resetAdminItemDraft_();
-    if (draftItem.item.butuh_persetujuan_harga) {
-      setStatusText_('Item agen ditambahkan, harga di bawah harga dasar akan masuk approval');
-    } else {
-      setStatusText_('Item berhasil ditambahkan ke order agen');
+      appState.adminOrderItems.push(draftItem.item);
+      renderAdminOrderItems_();
+      resetAdminItemDraft_();
+      if (draftItem.item.butuh_persetujuan_harga) {
+        setStatusText_('Item agen ditambahkan, harga di bawah harga dasar akan masuk approval');
+      } else {
+        setStatusText_('Item berhasil ditambahkan ke order agen');
+      }
+    } catch (error) {
+      setStatusText_('Gagal tambah item agen');
+      renderResult_('Gagal tambah item agen: ' + (error && error.message ? error.message : error), true);
     }
   }
 
