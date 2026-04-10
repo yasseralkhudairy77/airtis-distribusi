@@ -1611,11 +1611,22 @@
   function renderSalesCustomerSearchResults_(query) {
     var container = document.getElementById('customerSearchResults');
     var selectedCustomerId = getFieldValue_('customer_id');
+    var normalizedQuery = normalizeSearchText_(query);
     var filteredCustomers;
 
     if (!container) return;
 
-    filteredCustomers = filterCustomersByQuery_(query).slice(0, 20);
+    if (!normalizedQuery) {
+      container.innerHTML = '<div class="customer-search-empty">Ketik minimal 2 huruf untuk mencari customer lama.</div>';
+      return;
+    }
+
+    if (normalizedQuery.length < 2) {
+      container.innerHTML = '<div class="customer-search-empty">Lanjutkan ketik minimal 2 huruf agar hasil customer muncul.</div>';
+      return;
+    }
+
+    filteredCustomers = filterCustomersByQuery_(query).slice(0, 10);
 
     if (!filteredCustomers.length) {
       container.innerHTML = '<div class="customer-search-empty">Customer tidak ditemukan. Coba ketik nama, kode customer, PIC, atau no. HP.</div>';
