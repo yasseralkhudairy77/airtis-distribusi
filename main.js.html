@@ -522,7 +522,7 @@
           '</div></td>' +
           '<td>' + escapeHtml_(formatNumber_(item.qty)) + '</td>' +
           '<td>' + escapeHtml_(formatCurrencyInput_(item.harga)) + '</td>' +
-          '<td>' + escapeHtml_(formatCurrencyInput_(item.diskon)) + '</td>' +
+          '<td>' + escapeHtml_(formatPercentValue_(item.diskon_persen)) + '</td>' +
           '<td>' + escapeHtml_(formatCurrencyInput_(item.subtotal)) + '</td>' +
           '<td><button type="button" class="danger-btn" onclick="removeSalesItem_(' + index + ')">Hapus</button></td>' +
         '</tr>';
@@ -551,7 +551,7 @@
           '</div></td>' +
           '<td>' + escapeHtml_(formatNumber_(item.qty)) + '</td>' +
           '<td>' + escapeHtml_(formatCurrencyInput_(item.harga)) + '</td>' +
-          '<td>' + escapeHtml_(formatCurrencyInput_(item.diskon)) + '</td>' +
+          '<td>' + escapeHtml_(formatPercentValue_(item.diskon_persen)) + '</td>' +
           '<td>' + escapeHtml_(formatCurrencyInput_(item.subtotal)) + '</td>' +
           '<td><button type="button" class="danger-btn" onclick="removeAdminItem_(' + index + ')">Hapus</button></td>' +
         '</tr>';
@@ -803,9 +803,10 @@
   function calculateTotals_() {
     var qty = Number(getFieldValue_('qty') || 0);
     var harga = Number(getFieldValue_('harga') || 0);
-    var diskon = Number(getFieldValue_('diskon') || 0);
+    var diskonPersen = clampDiscountPercent_(getFieldValue_('diskon'));
     var subtotal = qty * harga;
-    var total = subtotal - diskon;
+    var diskonNominal = subtotal * (diskonPersen / 100);
+    var total = subtotal - diskonNominal;
 
     setFieldValue_('line_subtotal', formatCurrencyInput_(total > 0 ? total : 0));
   }
@@ -830,9 +831,10 @@
   function calculateAdminTotals_() {
     var qty = Number(getFieldValue_('admin_qty') || 0);
     var harga = Number(getFieldValue_('admin_harga') || 0);
-    var diskon = Number(getFieldValue_('admin_diskon') || 0);
+    var diskonPersen = clampDiscountPercent_(getFieldValue_('admin_diskon'));
     var subtotal = qty * harga;
-    var total = subtotal - diskon;
+    var diskonNominal = subtotal * (diskonPersen / 100);
+    var total = subtotal - diskonNominal;
 
     setFieldValue_('admin_line_subtotal', formatCurrencyInput_(total > 0 ? total : 0));
   }
@@ -1092,7 +1094,9 @@
     var namaItem = String(getFieldValue_('item') || '').trim();
     var qty = Number(getFieldValue_('qty') || 0);
     var harga = Number(getFieldValue_('harga') || 0);
-    var diskon = Number(getFieldValue_('diskon') || 0);
+    var diskonPersen = clampDiscountPercent_(getFieldValue_('diskon'));
+    var grossSubtotal = qty * harga;
+    var diskon = grossSubtotal * (diskonPersen / 100);
     var subtotal = parseCurrencyInput_(getFieldValue_('line_subtotal'));
     var product = getProductByName_(namaItem);
 
@@ -1108,8 +1112,12 @@
       return { validationMessage: 'Harga item tidak boleh negatif.' };
     }
 
-    if (diskon < 0) {
+    if (diskonPersen < 0) {
       return { validationMessage: 'Diskon item tidak boleh negatif.' };
+    }
+
+    if (diskonPersen > 100) {
+      return { validationMessage: 'Diskon item maksimal 100%.' };
     }
 
     return {
@@ -1121,6 +1129,7 @@
         satuan: product ? product.satuan || '' : '',
         harga: harga,
         diskon: diskon,
+        diskon_persen: diskonPersen,
         subtotal: subtotal
       }
     };
@@ -1132,7 +1141,9 @@
     var namaItem = String(getFieldValue_('admin_item') || '').trim();
     var qty = Number(getFieldValue_('admin_qty') || 0);
     var harga = Number(getFieldValue_('admin_harga') || 0);
-    var diskon = Number(getFieldValue_('admin_diskon') || 0);
+    var diskonPersen = clampDiscountPercent_(getFieldValue_('admin_diskon'));
+    var grossSubtotal = qty * harga;
+    var diskon = grossSubtotal * (diskonPersen / 100);
     var subtotal = parseCurrencyInput_(getFieldValue_('admin_line_subtotal'));
     var product = getProductByName_(namaItem);
 
@@ -1148,8 +1159,12 @@
       return { validationMessage: 'Harga item agen tidak boleh negatif.' };
     }
 
-    if (diskon < 0) {
+    if (diskonPersen < 0) {
       return { validationMessage: 'Diskon item agen tidak boleh negatif.' };
+    }
+
+    if (diskonPersen > 100) {
+      return { validationMessage: 'Diskon item agen maksimal 100%.' };
     }
 
     return {
@@ -1161,6 +1176,7 @@
         satuan: product ? product.satuan || '' : '',
         harga: harga,
         diskon: diskon,
+        diskon_persen: diskonPersen,
         subtotal: subtotal
       }
     };
@@ -1911,6 +1927,24 @@
 
   function formatCurrencyInput_(value) {
     return 'Rp ' + formatNumber_(value || 0);
+  }
+
+  function formatPercentValue_(value) {
+    return formatNumber_(Number(value || 0)) + '%';
+  }
+
+  function clampDiscountPercent_(value) {
+    var number = Number(value || 0);
+
+    if (number < 0) {
+      return 0;
+    }
+
+    if (number > 100) {
+      return 100;
+    }
+
+    return number;
   }
 
   function parseCurrencyInput_(value) {
