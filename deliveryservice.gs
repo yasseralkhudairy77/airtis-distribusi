@@ -225,65 +225,71 @@ function completeOrder(noSo, userId, catatanKirim) {
   return result;
 }
 
-function generateKledoExportFile(noSo, currentUser) {
-  var salesOrder = buildSalesOrderClientRow_(findSalesOrderByNoSo_(noSo) || {});
-  var suratJalan = findSuratJalanByNoSo_(noSo) || {};
-  var exportRows;
+function generateKledoExportBatchFile(currentUser) {
+  var readyOrders = getReadyKledoExportOrders_();
+  var exportRows = [];
   var workbookXml;
   var fileName;
+  var itemCount = 0;
 
-  if (!salesOrder.no_so) {
-    throw new Error('Sales order tidak ditemukan untuk no_so: ' + noSo);
+  if (!readyOrders.length) {
+    throw new Error('Belum ada order Siap Export untuk dibuatkan batch Kledo.');
   }
 
-  if (normalizeText_(salesOrder.status_order) !== 'selesai') {
-    throw new Error('Export Kledo hanya bisa dibuat untuk order yang sudah Selesai.');
-  }
+  readyOrders.forEach(function(order) {
+    var suratJalan = findSuratJalanByNoSo_(order.no_so) || {};
+    var rows = buildKledoExportRows_(order, suratJalan);
 
-  if (String(salesOrder.status_verifikasi_cs || '').trim() !== 'Sudah Dicek') {
-    throw new Error('Order belum diverifikasi CS. Export Kledo belum bisa dibuat.');
-  }
+    itemCount += rows.length;
+    exportRows = exportRows.concat(rows);
+  });
 
-  exportRows = buildKledoExportRows_(salesOrder, suratJalan);
   workbookXml = buildKledoExportWorkbookXml_([APP_CONFIG.KLEDO_EXPORT.HEADERS].concat(exportRows));
   fileName = [
-    APP_CONFIG.KLEDO_EXPORT.FILE_PREFIX,
-    String(salesOrder.no_so || '').replace(/[^A-Za-z0-9_-]/g, '_'),
+    APP_CONFIG.KLEDO_EXPORT.FILE_PREFIX + '-batch',
     Utilities.formatDate(new Date(), APP_CONFIG.TIMEZONE, 'yyyyMMdd-HHmmss')
   ].join('-') + '.xls';
 
   return {
     success: true,
-    no_so: salesOrder.no_so,
+    order_count: readyOrders.length,
+    item_count: itemCount,
+    no_so_list: readyOrders.map(function(order) {
+      return order.no_so;
+    }),
     file_name: fileName,
     mime_type: 'application/vnd.ms-excel;charset=utf-8;',
     file_content: workbookXml
   };
 }
 
-function markKledoOrderExported(noSo, currentUser, catatanExport) {
-  var salesOrder = findSalesOrderByNoSo_(noSo);
+function markKledoBatchExported(currentUser, catatanExport) {
+  var readyOrders = getReadyKledoExportOrders_();
   var now = getNowParts_();
+  var noSoList;
 
-  if (!salesOrder) {
-    throw new Error('Sales order tidak ditemukan untuk no_so: ' + noSo);
+  if (!readyOrders.length) {
+    throw new Error('Belum ada order Siap Export untuk ditandai Sudah Export.');
   }
 
-  if (String(salesOrder.status_export_kledo || '').trim() !== 'Siap Export') {
-    throw new Error('Order belum berada pada status Siap Export.');
-  }
+  noSoList = readyOrders.map(function(order) {
+    return order.no_so;
+  });
 
-  updateRowByKey_(APP_CONFIG.SHEETS.SALES_ORDER, 'no_so', noSo, {
-    status_export_kledo: 'Sudah Export',
-    tanggal_export_kledo: now.tanggal + ' ' + now.jam,
-    diekspor_oleh: currentUser.user_id || '',
-    catatan_export_kledo: String(catatanExport || '').trim()
+  noSoList.forEach(function(noSo) {
+    updateRowByKey_(APP_CONFIG.SHEETS.SALES_ORDER, 'no_so', noSo, {
+      status_export_kledo: 'Sudah Export',
+      tanggal_export_kledo: now.tanggal + ' ' + now.jam,
+      diekspor_oleh: currentUser.user_id || '',
+      catatan_export_kledo: String(catatanExport || '').trim()
+    });
   });
 
   return {
     success: true,
-    no_so: noSo,
-    status_export_kledo: 'Sudah Export'
+    status_export_kledo: 'Sudah Export',
+    order_count: noSoList.length,
+    no_so_list: noSoList
   };
 }
 

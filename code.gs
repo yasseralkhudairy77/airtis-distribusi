@@ -70,37 +70,7 @@ function getApproverDashboardData(userId) {
   var approvals = getSheetData_(APP_CONFIG.SHEETS.APPROVAL_ORDER).filter(function(row) {
     return normalizeText_(row.status_approval) === 'menunggu';
   });
-  var exportOrders = getSheetData_(APP_CONFIG.SHEETS.SALES_ORDER).filter(function(row) {
-    var statusOrder = normalizeText_(row.status_order);
-    var verificationStatus = String(row.status_verifikasi_cs || '').trim();
-    var exportStatus = String(row.status_export_kledo || '').trim();
-
-    return statusOrder === 'selesai' &&
-      verificationStatus === 'Sudah Dicek' &&
-      exportStatus !== 'Sudah Export';
-  }).map(function(orderRow) {
-    var order = buildSalesOrderClientRow_(orderRow || {});
-    var suratJalan = findSuratJalanByNoSo_(order.no_so) || {};
-
-    return {
-      no_so: order.no_so || '',
-      customer: order.nama_customer_input || '',
-      alamat_kirim: order.alamat_kirim || '',
-      no_hp_customer: order.no_hp_customer || '',
-      sales_nama: order.sales_nama || '',
-      tanggal_order: order.tanggal_order || '',
-      tanggal_jatuh_tempo: order.tanggal_jatuh_tempo || '',
-      tanggal_kirim: suratJalan.tanggal_kirim || order.tanggal_kirim_rencana || '',
-      term_pembayaran: order.term_pembayaran || '',
-      item: order.item_summary || order.item || '',
-      qty: order.qty_summary || order.qty || '',
-      details: order.details || [],
-      total_final: order.total_final || order.total || 0,
-      status_export_kledo: order.status_export_kledo || 'Siap Export',
-      catatan_order: order.catatan || '',
-      catatan_verifikasi_cs: order.catatan_verifikasi_cs || ''
-    };
-  });
+  var exportOrders = getReadyKledoExportOrders_();
 
   return toClientValue_({
     currentUser: currentUser,
@@ -134,6 +104,40 @@ function getApproverDashboardData(userId) {
         catatan_piutang: order.catatan_piutang || ''
       };
     })
+  });
+}
+
+function getReadyKledoExportOrders_() {
+  return getSheetData_(APP_CONFIG.SHEETS.SALES_ORDER).filter(function(row) {
+    var statusOrder = normalizeText_(row.status_order);
+    var verificationStatus = String(row.status_verifikasi_cs || '').trim();
+    var exportStatus = String(row.status_export_kledo || '').trim();
+
+    return statusOrder === 'selesai' &&
+      verificationStatus === 'Sudah Dicek' &&
+      exportStatus !== 'Sudah Export';
+  }).map(function(orderRow) {
+    var order = buildSalesOrderClientRow_(orderRow || {});
+    var suratJalan = findSuratJalanByNoSo_(order.no_so) || {};
+
+    return {
+      no_so: order.no_so || '',
+      customer: order.nama_customer_input || '',
+      alamat_kirim: order.alamat_kirim || '',
+      no_hp_customer: order.no_hp_customer || '',
+      sales_nama: order.sales_nama || '',
+      tanggal_order: order.tanggal_order || '',
+      tanggal_jatuh_tempo: order.tanggal_jatuh_tempo || '',
+      tanggal_kirim: suratJalan.tanggal_kirim || order.tanggal_kirim_rencana || '',
+      term_pembayaran: order.term_pembayaran || '',
+      item: order.item_summary || order.item || '',
+      qty: order.qty_summary || order.qty || '',
+      details: order.details || [],
+      total_final: order.total_final || order.total || 0,
+      status_export_kledo: order.status_export_kledo || 'Siap Export',
+      catatan_order: order.catatan || '',
+      catatan_verifikasi_cs: order.catatan_verifikasi_cs || ''
+    };
   });
 }
 
@@ -319,12 +323,12 @@ function verifyDeliveredOrderFromDashboard(userId, formData) {
 
 function generateKledoExportFromDashboard(userId, formData) {
   var currentUser = requireCurrentUserRole_(['Approver'], userId);
-  return toClientValue_(generateKledoExportFile(formData.no_so, currentUser));
+  return toClientValue_(generateKledoExportBatchFile(currentUser));
 }
 
 function markKledoExportedFromDashboard(userId, formData) {
   var currentUser = requireCurrentUserRole_(['Approver'], userId);
-  return toClientValue_(markKledoOrderExported(formData.no_so, currentUser, formData.catatan_export_kledo || ''));
+  return toClientValue_(markKledoBatchExported(currentUser, formData.catatan_export_kledo || ''));
 }
 
 function completeOrderFromDashboard(userId, formData) {

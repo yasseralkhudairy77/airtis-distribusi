@@ -81,6 +81,8 @@
     document.getElementById('logoutBtn').addEventListener('click', handleLogout_);
     document.getElementById('refreshApproverBtn').addEventListener('click', loadApproverData_);
     document.getElementById('refreshApproverExportBtn').addEventListener('click', loadApproverData_);
+    document.getElementById('downloadKledoBatchBtn').addEventListener('click', handleDownloadKledoExportBatch_);
+    document.getElementById('markKledoBatchUploadedBtn').addEventListener('click', handleMarkKledoBatchUploaded_);
     document.getElementById('approver_search').addEventListener('input', handleApproverSearchInput_);
     document.getElementById('approver_price_search').addEventListener('input', handleApproverPriceSearchInput_);
     document.getElementById('refreshAdminBtn').addEventListener('click', loadAdminData_);
@@ -424,20 +426,19 @@
   function renderApproverExportTable_() {
     var tbody = document.getElementById('approverExportTableBody');
     var orders = appState.exportOrders || [];
+    var batchButtonsDisabled = !orders.length;
 
     if (!tbody) return;
+    document.getElementById('downloadKledoBatchBtn').disabled = batchButtonsDisabled;
+    document.getElementById('markKledoBatchUploadedBtn').disabled = batchButtonsDisabled;
 
     if (!orders.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty-cell">Belum ada order siap export Kledo.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">Belum ada order siap export Kledo.</td></tr>';
       return;
     }
 
     tbody.innerHTML = orders.map(function(row) {
       var noSo = String(row.no_so || '');
-      var actions = [];
-
-      actions.push('<button type="button" class="approve-btn" onclick="handleDownloadKledoExport(\'' + escapeJs_(noSo) + '\')">Download Excel</button>');
-      actions.push('<button type="button" class="ghost-btn" onclick="handleMarkKledoExported(\'' + escapeJs_(noSo) + '\')">Sudah Upload</button>');
 
       return '' +
         '<tr>' +
@@ -454,7 +455,6 @@
             '<div class="approver-meta-line"><strong>Kirim:</strong> ' + escapeHtml_(formatShortDateId_(row.tanggal_kirim || '')) + '</div>' +
           '</td>' +
           '<td>' + buildStatusBadge_(row.status_export_kledo || 'Siap Export') + '</td>' +
-          '<td><div class="approver-action-stack">' + actions.join('') + '</div></td>' +
         '</tr>';
     }).join('');
   }
@@ -842,35 +842,41 @@
       });
   }
 
-  function handleDownloadKledoExport(noSo) {
-    setStatusText_('Menyiapkan export Kledo...');
+  function handleDownloadKledoExportBatch_() {
+    setStatusText_('Menyiapkan batch export Kledo...');
 
     google.script.run
       .withSuccessHandler(function(result) {
         downloadTextFile_(
-          result.file_name || ('kledo-' + noSo + '.xls'),
+          result.file_name || 'kledo-batch.xls',
           result.file_content || '',
           result.mime_type || 'application/vnd.ms-excel;charset=utf-8;'
         );
-        setStatusText_('File Kledo berhasil dibuat');
-        renderResult_('File export Kledo untuk order ' + result.no_so + ' berhasil diunduh.', false);
+        setStatusText_('Batch Kledo berhasil dibuat');
+        renderResult_(
+          'Batch export Kledo berhasil diunduh.\nJumlah SO: ' + String(result.order_count || 0) +
+          '\nJumlah item: ' + String(result.item_count || 0),
+          false
+        );
       })
       .withFailureHandler(function(error) {
         setStatusText_('Gagal membuat export Kledo');
         renderResult_('Gagal membuat export Kledo: ' + error.message, true);
       })
-      .generateKledoExportFromDashboard(appState.currentUser.user_id, {
-        no_so: noSo
-      });
+      .generateKledoExportFromDashboard(appState.currentUser.user_id, {});
   }
 
-  function handleMarkKledoExported(noSo) {
-    setStatusText_('Menandai order sudah diupload ke Kledo...');
+  function handleMarkKledoBatchUploaded_() {
+    setStatusText_('Menandai batch sudah diupload ke Kledo...');
 
     google.script.run
       .withSuccessHandler(function(result) {
         setStatusText_('Status export Kledo diperbarui');
-        renderResult_('Order ' + result.no_so + ' ditandai Sudah Export.', false);
+        renderResult_(
+          'Batch berhasil ditandai Sudah Export.\nJumlah SO: ' + String(result.order_count || 0) +
+          '\nNo SO: ' + String((result.no_so_list || []).join(', ') || '-'),
+          false
+        );
         loadApproverData_();
       })
       .withFailureHandler(function(error) {
@@ -878,8 +884,7 @@
         renderResult_('Gagal update status export Kledo: ' + error.message, true);
       })
       .markKledoExportedFromDashboard(appState.currentUser.user_id, {
-        no_so: noSo,
-        catatan_export_kledo: 'Ditandai upload manual dari webapp approver'
+        catatan_export_kledo: 'Ditandai upload batch manual dari webapp approver'
       });
   }
 

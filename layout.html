@@ -318,9 +318,13 @@
               <div class="panel-header">
                 <div>
                   <h2>Export Kledo</h2>
-                  <p class="panel-subtitle">Order yang sudah selesai dan sudah diverifikasi CS otomatis masuk antrean approver untuk export template import Kledo.</p>
+                  <p class="panel-subtitle">Order yang sudah selesai dan sudah diverifikasi CS otomatis masuk antrean approver untuk digabung ke 1 file batch sesuai template Kledo.</p>
                 </div>
-                <button type="button" class="ghost-btn" id="refreshApproverExportBtn">Refresh</button>
+                <div class="inline-actions">
+                  <button type="button" class="approve-btn" id="downloadKledoBatchBtn">Download Batch Excel</button>
+                  <button type="button" class="ghost-btn" id="markKledoBatchUploadedBtn">Tandai Batch Sudah Upload</button>
+                  <button type="button" class="ghost-btn" id="refreshApproverExportBtn">Refresh</button>
+                </div>
               </div>
 
               <div class="summary-grid approver-summary-grid">
@@ -350,11 +354,10 @@
                       <th>Ringkasan Final</th>
                       <th>Tanggal</th>
                       <th>Status Export</th>
-                      <th>Aksi</th>
                     </tr>
                   </thead>
                   <tbody id="approverExportTableBody">
-                    <tr><td colspan="6" class="empty-cell">Belum ada order siap export Kledo.</td></tr>
+                    <tr><td colspan="5" class="empty-cell">Belum ada order siap export Kledo.</td></tr>
                   </tbody>
                 </table>
               </div>
