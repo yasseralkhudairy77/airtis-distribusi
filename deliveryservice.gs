@@ -298,6 +298,8 @@ function markKledoBatchExported(currentUser, catatanExport) {
 
 function buildKledoExportRows_(salesOrder, suratJalan) {
   var details = Array.isArray(salesOrder.details) ? salesOrder.details : [];
+  var customerName = salesOrder.customer || salesOrder.nama_customer_input || '';
+  var orderNote = salesOrder.catatan || salesOrder.catatan_order || '';
 
   if (!details.length) {
     throw new Error('Detail item order tidak ditemukan untuk export Kledo.');
@@ -309,7 +311,7 @@ function buildKledoExportRows_(salesOrder, suratJalan) {
     var diskon = Number(detail.diskon_final || detail.diskon || 0);
 
     return [
-      salesOrder.nama_customer_input || '',
+      customerName,
       '',
       salesOrder.alamat_kirim || '',
       salesOrder.no_hp_customer || '',
@@ -319,7 +321,10 @@ function buildKledoExportRows_(salesOrder, suratJalan) {
       formatKledoDate_(salesOrder.tanggal_order || ''),
       formatKledoDate_(salesOrder.tanggal_jatuh_tempo || ''),
       APP_CONFIG.KLEDO_EXPORT.WAREHOUSE_NAME,
-      buildKledoOrderNote_(salesOrder),
+      buildKledoOrderNote_({
+        catatan: orderNote,
+        catatan_verifikasi_cs: salesOrder.catatan_verifikasi_cs || ''
+      }),
       formatKledoDate_(suratJalan.tanggal_kirim || salesOrder.tanggal_kirim_rencana || ''),
       suratJalan.armada || '',
       '',
