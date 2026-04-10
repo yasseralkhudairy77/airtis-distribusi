@@ -11,6 +11,7 @@
     approvals: [],
     approvers: [],
     approverSearch: '',
+    approverPriceSearch: '',
     readyOrders: [],
     deliveryOrders: [],
     deliveryFilterDate: '',
@@ -73,6 +74,7 @@
     document.getElementById('logoutBtn').addEventListener('click', handleLogout_);
     document.getElementById('refreshApproverBtn').addEventListener('click', loadApproverData_);
     document.getElementById('approver_search').addEventListener('input', handleApproverSearchInput_);
+    document.getElementById('approver_price_search').addEventListener('input', handleApproverPriceSearchInput_);
     document.getElementById('refreshAdminBtn').addEventListener('click', loadAdminData_);
     document.getElementById('deliveryFilterDate').addEventListener('change', handleDeliveryFilterChange_);
     document.getElementById('deliveryFilterTodayBtn').addEventListener('click', handleDeliveryFilterToday_);
@@ -169,12 +171,17 @@
 
           appState.approvals = Array.isArray(payload.approvals) ? payload.approvals : [];
           appState.approvers = Array.isArray(payload.approvers) ? payload.approvers : [];
+          appState.products = Array.isArray(payload.products) ? payload.products : appState.products;
           appState.approverSearch = '';
+          appState.approverPriceSearch = '';
           syncCurrentUser_(payload.currentUser);
 
           renderApproverOptions_();
+          renderApproverPriceSummary_();
+          renderApproverPriceTable_();
           renderApproverSummary_();
           setFieldValue_('approver_search', '');
+          setFieldValue_('approver_price_search', '');
           renderApproverTable_();
 
           if (callback) callback();
@@ -302,6 +309,7 @@
       option.value = product.nama_item;
       option.textContent = product.nama_item;
       option.dataset.harga = product.harga_default || 0;
+      option.dataset.basePrice = product.harga_dasar || product.harga_default || 0;
       productSelect.appendChild(option);
     });
   }
@@ -315,6 +323,7 @@
       option.value = product.nama_item;
       option.textContent = product.nama_item;
       option.dataset.harga = product.harga_default || 0;
+      option.dataset.basePrice = product.harga_dasar || product.harga_default || 0;
       productSelect.appendChild(option);
     });
   }
@@ -382,6 +391,58 @@
     }).length));
   }
 
+  function renderApproverPriceSummary_() {
+    var products = appState.products || [];
+    var readyCount = products.filter(function(product) {
+      return Number(product.harga_dasar || product.harga_default || 0) > 0;
+    }).length;
+
+    setText_('summaryBasePriceItems', String(products.length || 0));
+    setText_('summaryBasePriceReady', String(readyCount));
+    setText_('summaryBasePriceMissing', String((products.length || 0) - readyCount));
+  }
+
+  function renderApproverPriceTable_() {
+    var tbody = document.getElementById('approverPriceTableBody');
+    var products;
+
+    if (!tbody) return;
+
+    products = getFilteredApproverProducts_();
+
+    if (!products.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-cell">Item tidak ditemukan.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = products.map(function(product) {
+      var kodeItem = String(product.kode_item || '');
+      var hargaDasar = Number(product.harga_dasar || product.harga_default || 0);
+      var updateMeta = [];
+
+      if (product.diupdate_oleh) {
+        updateMeta.push('Oleh ' + product.diupdate_oleh);
+      }
+
+      if (product.tanggal_update_harga) {
+        updateMeta.push(String(product.tanggal_update_harga));
+      }
+
+      return '' +
+        '<tr>' +
+          '<td>' + escapeHtml_(kodeItem) + '</td>' +
+          '<td>' + escapeHtml_(product.nama_item || '-') + '</td>' +
+          '<td>' + escapeHtml_(product.satuan || '-') + '</td>' +
+          '<td><div class="price-input-wrap">' +
+            '<span class="price-input-prefix">Rp</span>' +
+            '<input class="price-base-input" id="base-price-' + escapeHtml_(kodeItem) + '" type="number" min="0" step="1" value="' + escapeHtml_(String(hargaDasar || 0)) + '" />' +
+          '</div></td>' +
+          '<td><div class="price-update-meta">' + escapeHtml_(updateMeta.join(' | ') || 'Belum pernah diupdate') + '</div></td>' +
+          '<td><button type="button" class="primary-btn" onclick="saveProductBasePrice_(\'' + escapeJs_(kodeItem) + '\')">Simpan</button></td>' +
+        '</tr>';
+    }).join('');
+  }
+
   function getFilteredApprovals_() {
     var query = normalizeSearchText_(appState.approverSearch);
 
@@ -400,6 +461,28 @@
         row.item,
         row.alasan_approval,
         row.status_customer
+      ].map(normalizeSearchText_).join(' ');
+
+      return haystack.indexOf(query) !== -1;
+    });
+  }
+
+  function getFilteredApproverProducts_() {
+    var query = normalizeSearchText_(appState.approverPriceSearch);
+
+    return (appState.products || []).slice().sort(function(left, right) {
+      return normalizeSearchText_(left.nama_item).localeCompare(normalizeSearchText_(right.nama_item), 'id-ID');
+    }).filter(function(product) {
+      var haystack;
+
+      if (!query) {
+        return true;
+      }
+
+      haystack = [
+        product.kode_item,
+        product.nama_item,
+        product.satuan
       ].map(normalizeSearchText_).join(' ');
 
       return haystack.indexOf(query) !== -1;
@@ -619,6 +702,42 @@
   function handleApproverSearchInput_() {
     appState.approverSearch = getFieldValue_('approver_search');
     renderApproverTable_();
+  }
+
+  function handleApproverPriceSearchInput_() {
+    appState.approverPriceSearch = getFieldValue_('approver_price_search');
+    renderApproverPriceTable_();
+  }
+
+  function saveProductBasePrice_(kodeItem) {
+    var inputValue = Number(getFieldValue_('base-price-' + kodeItem) || 0);
+
+    if (!kodeItem) {
+      return;
+    }
+
+    if (inputValue <= 0) {
+      setStatusText_('Harga dasar harus lebih dari 0');
+      renderResult_('Harga dasar item wajib lebih dari 0 sebelum disimpan.', true);
+      return;
+    }
+
+    setStatusText_('Menyimpan harga dasar item...');
+
+    google.script.run
+      .withSuccessHandler(function() {
+        setStatusText_('Harga dasar item berhasil disimpan');
+        renderResult_('Harga dasar item berhasil diperbarui dan berlaku global untuk sales serta CS/Admin.', false);
+        loadApproverData_();
+      })
+      .withFailureHandler(function(error) {
+        setStatusText_('Gagal menyimpan harga dasar item');
+        renderResult_('Gagal simpan harga dasar item: ' + error.message, true);
+      })
+      .updateProductBasePriceFromApprover(appState.currentUser.user_id, {
+        kode_item: kodeItem,
+        harga_dasar: inputValue
+      });
   }
 
   function handleDeliveryFilterToday_() {
@@ -889,7 +1008,7 @@
     var productSelect = document.getElementById('item');
     if (!productSelect) return;
     var selectedOption = productSelect.options[productSelect.selectedIndex];
-    var harga = selectedOption ? Number(selectedOption.dataset.harga || 0) : 0;
+    var harga = selectedOption ? Number(selectedOption.dataset.harga || selectedOption.dataset.basePrice || 0) : 0;
     setFieldValue_('harga', harga);
     calculateTotals_();
   }
@@ -906,7 +1025,11 @@
     appState.salesOrderItems.push(draftItem.item);
     renderSalesOrderItems_();
     resetSalesItemDraft_();
-    setStatusText_('Item berhasil ditambahkan ke sales order');
+    if (draftItem.item.butuh_persetujuan_harga) {
+      setStatusText_('Item ditambahkan, harga di bawah harga dasar akan masuk approval');
+    } else {
+      setStatusText_('Item berhasil ditambahkan ke sales order');
+    }
   }
 
   function removeSalesItem_(index) {
@@ -929,7 +1052,11 @@
     appState.adminOrderItems.push(draftItem.item);
     renderAdminOrderItems_();
     resetAdminItemDraft_();
-    setStatusText_('Item berhasil ditambahkan ke order agen');
+    if (draftItem.item.butuh_persetujuan_harga) {
+      setStatusText_('Item agen ditambahkan, harga di bawah harga dasar akan masuk approval');
+    } else {
+      setStatusText_('Item berhasil ditambahkan ke order agen');
+    }
   }
 
   function removeAdminItem_(index) {
@@ -944,7 +1071,7 @@
     var productSelect = document.getElementById('admin_item');
     if (!productSelect) return;
     var selectedOption = productSelect.options[productSelect.selectedIndex];
-    var harga = selectedOption ? Number(selectedOption.dataset.harga || 0) : 0;
+    var harga = selectedOption ? Number(selectedOption.dataset.harga || selectedOption.dataset.basePrice || 0) : 0;
     setFieldValue_('admin_harga', harga);
     calculateAdminTotals_();
   }
@@ -1278,9 +1405,18 @@
     var diskon = grossSubtotal * (diskonPersen / 100);
     var subtotal = parseCurrencyInput_(getFieldValue_('line_subtotal'));
     var product = getProductByName_(namaItem);
+    var hargaDasar = Number(product && (product.harga_dasar || product.harga_default) || 0);
 
     if (!namaItem) {
       return { validationMessage: 'Produk wajib dipilih sebelum menambah item.' };
+    }
+
+    if (!product) {
+      return { validationMessage: 'Produk tidak ditemukan di master item.' };
+    }
+
+    if (hargaDasar <= 0) {
+      return { validationMessage: 'Harga dasar produk belum diinput approver. Hubungi approver untuk melengkapi harga dasar item.' };
     }
 
     if (qty <= 0) {
@@ -1307,8 +1443,10 @@
         qty: qty,
         satuan: product ? product.satuan || '' : '',
         harga: harga,
+        harga_dasar: hargaDasar,
         diskon: diskon,
         diskon_persen: diskonPersen,
+        butuh_persetujuan_harga: harga < hargaDasar,
         subtotal: subtotal
       }
     };
@@ -1325,9 +1463,18 @@
     var diskon = grossSubtotal * (diskonPersen / 100);
     var subtotal = parseCurrencyInput_(getFieldValue_('admin_line_subtotal'));
     var product = getProductByName_(namaItem);
+    var hargaDasar = Number(product && (product.harga_dasar || product.harga_default) || 0);
 
     if (!namaItem) {
       return { validationMessage: 'Produk wajib dipilih sebelum menambah item agen.' };
+    }
+
+    if (!product) {
+      return { validationMessage: 'Produk agen tidak ditemukan di master item.' };
+    }
+
+    if (hargaDasar <= 0) {
+      return { validationMessage: 'Harga dasar produk belum diinput approver. Hubungi approver untuk melengkapi harga dasar item.' };
     }
 
     if (qty <= 0) {
@@ -1354,8 +1501,10 @@
         qty: qty,
         satuan: product ? product.satuan || '' : '',
         harga: harga,
+        harga_dasar: hargaDasar,
         diskon: diskon,
         diskon_persen: diskonPersen,
+        butuh_persetujuan_harga: harga < hargaDasar,
         subtotal: subtotal
       }
     };

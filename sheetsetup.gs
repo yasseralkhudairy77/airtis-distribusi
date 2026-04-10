@@ -56,9 +56,17 @@ function seedDummyData_(currentRole) {
   var role = currentRole || 'Sales';
   var userSeed = buildDummyUsers_(currentEmail, role);
   var customerSeeds = buildDummyCustomers_();
+  var productSeeds = getDefaultProductCatalogSeed_().map(function(item, index) {
+    item.harga_dasar = [19000, 8000, 32000, 35000, 38000, 42000, 47000, 52000][index] || 0;
+    item.harga_default = item.harga_dasar;
+    item.diupdate_oleh = 'U030';
+    item.tanggal_update_harga = Utilities.formatDate(new Date(), APP_CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm:ss');
+    return item;
+  });
 
   writeRowsByHeaders_(APP_CONFIG.SHEETS.MASTER_USER, APP_CONFIG.HEADERS.MASTER_USER, userSeed);
   writeRowsByHeaders_(APP_CONFIG.SHEETS.MASTER_CUSTOMER, APP_CONFIG.HEADERS.MASTER_CUSTOMER, customerSeeds);
+  writeRowsByHeaders_(APP_CONFIG.SHEETS.MASTER_ITEM, APP_CONFIG.HEADERS.MASTER_ITEM, productSeeds);
 
   createDummyTransactions_();
 
@@ -78,6 +86,7 @@ function clearDataRows_() {
   [
     APP_CONFIG.SHEETS.MASTER_CUSTOMER,
     APP_CONFIG.SHEETS.MASTER_USER,
+    APP_CONFIG.SHEETS.MASTER_ITEM,
     APP_CONFIG.SHEETS.SALES_ORDER,
     APP_CONFIG.SHEETS.SALES_ORDER_DETAIL,
     APP_CONFIG.SHEETS.APPROVAL_ORDER,

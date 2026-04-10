@@ -73,6 +73,7 @@ function getApproverDashboardData(userId) {
   return toClientValue_({
     currentUser: currentUser,
     approvers: [currentUser],
+    products: getProductCatalog_(),
     approvals: approvals.map(function(approval) {
       var order = buildSalesOrderClientRow_(findSalesOrderByNoSo_(approval.no_so) || {});
       var customer = findCustomerByCode_(order.customer_id);
@@ -203,6 +204,22 @@ function rejectOrderFromDashboard(userId, formData) {
   return rejectOrder(formData.no_so, currentUser.user_id, formData.catatan_approval || '');
 }
 
+function updateProductBasePriceFromApprover(userId, formData) {
+  var currentUser = requireCurrentUserRole_(['Approver'], userId);
+  var kodeItem = String(formData && formData.kode_item || '').trim();
+  var hargaDasar = Number(formData && formData.harga_dasar || 0);
+
+  if (!kodeItem) {
+    throw new Error('Kode item wajib dipilih.');
+  }
+
+  if (hargaDasar <= 0) {
+    throw new Error('Harga dasar harus lebih dari 0.');
+  }
+
+  return toClientValue_(updateProductBasePrice_(kodeItem, hargaDasar, currentUser));
+}
+
 function createSuratJalanFromDashboard(userId, formData) {
   requireCurrentUserRole_(['CS/Admin'], userId);
 
@@ -281,16 +298,64 @@ function validateSalesNewCustomerFields_(payload) {
 }
 
 function getProductCatalog_() {
+  ensureDefaultMasterItems_();
+
+  return getSheetData_(APP_CONFIG.SHEETS.MASTER_ITEM).filter(function(row) {
+    return normalizeText_(row.status_aktif || 'aktif') !== 'nonaktif';
+  }).map(function(row) {
+    var hargaDasar = Number(row.harga_dasar || 0);
+    var hargaDefault = Number(row.harga_default || 0) || hargaDasar;
+
+    return {
+      kode_item: String(row.kode_item || '').trim(),
+      nama_item: String(row.nama_item || '').trim(),
+      satuan: String(row.satuan || '').trim(),
+      harga_default: hargaDefault,
+      harga_dasar: hargaDasar,
+      diupdate_oleh: String(row.diupdate_oleh || '').trim(),
+      tanggal_update_harga: row.tanggal_update_harga || '',
+      status_aktif: row.status_aktif || 'Aktif'
+    };
+  });
+}
+
+function ensureDefaultMasterItems_() {
+  ensureSheetHeadersContain_(APP_CONFIG.SHEETS.MASTER_ITEM, APP_CONFIG.HEADERS.MASTER_ITEM);
+
+  if (getSheetData_(APP_CONFIG.SHEETS.MASTER_ITEM).length) {
+    return;
+  }
+
+  writeRowsByHeaders_(
+    APP_CONFIG.SHEETS.MASTER_ITEM,
+    APP_CONFIG.HEADERS.MASTER_ITEM,
+    getDefaultProductCatalogSeed_()
+  );
+}
+
+function getDefaultProductCatalogSeed_() {
   return [
-    { kode_item: 'PRD001', nama_item: 'AIRTIS Galon 19L', harga_default: 0, satuan: 'pcs' },
-    { kode_item: 'PRD002', nama_item: 'AIRTIS Refill galon 19L', harga_default: 0, satuan: 'pcs' },
-    { kode_item: 'PRD003', nama_item: 'AIRTIS Cup 150 ml', harga_default: 0, satuan: 'dus' },
-    { kode_item: 'PRD004', nama_item: 'AIRTIS Cup 220 ml', harga_default: 0, satuan: 'dus' },
-    { kode_item: 'PRD005', nama_item: 'AIRTIS Botol 220 ml', harga_default: 0, satuan: 'dus' },
-    { kode_item: 'PRD006', nama_item: 'AIRTIS Botol 330 ml', harga_default: 0, satuan: 'dus' },
-    { kode_item: 'PRD007', nama_item: 'AIRTIS Botol 600 ml', harga_default: 0, satuan: 'dus' },
-    { kode_item: 'PRD008', nama_item: 'AIRTIS Botol 1500 ml', harga_default: 0, satuan: 'dus' }
+    { kode_item: 'PRD001', nama_item: 'AIRTIS Galon 19L', satuan: 'pcs', harga_default: 0, harga_dasar: 0, diupdate_oleh: '', tanggal_update_harga: '', status_aktif: 'Aktif' },
+    { kode_item: 'PRD002', nama_item: 'AIRTIS Refill galon 19L', satuan: 'pcs', harga_default: 0, harga_dasar: 0, diupdate_oleh: '', tanggal_update_harga: '', status_aktif: 'Aktif' },
+    { kode_item: 'PRD003', nama_item: 'AIRTIS Cup 150 ml', satuan: 'dus', harga_default: 0, harga_dasar: 0, diupdate_oleh: '', tanggal_update_harga: '', status_aktif: 'Aktif' },
+    { kode_item: 'PRD004', nama_item: 'AIRTIS Cup 220 ml', satuan: 'dus', harga_default: 0, harga_dasar: 0, diupdate_oleh: '', tanggal_update_harga: '', status_aktif: 'Aktif' },
+    { kode_item: 'PRD005', nama_item: 'AIRTIS Botol 220 ml', satuan: 'dus', harga_default: 0, harga_dasar: 0, diupdate_oleh: '', tanggal_update_harga: '', status_aktif: 'Aktif' },
+    { kode_item: 'PRD006', nama_item: 'AIRTIS Botol 330 ml', satuan: 'dus', harga_default: 0, harga_dasar: 0, diupdate_oleh: '', tanggal_update_harga: '', status_aktif: 'Aktif' },
+    { kode_item: 'PRD007', nama_item: 'AIRTIS Botol 600 ml', satuan: 'dus', harga_default: 0, harga_dasar: 0, diupdate_oleh: '', tanggal_update_harga: '', status_aktif: 'Aktif' },
+    { kode_item: 'PRD008', nama_item: 'AIRTIS Botol 1500 ml', satuan: 'dus', harga_default: 0, harga_dasar: 0, diupdate_oleh: '', tanggal_update_harga: '', status_aktif: 'Aktif' }
   ];
+}
+
+function updateProductBasePrice_(kodeItem, hargaDasar, currentUser) {
+  var now = getNowParts_();
+  var userLabel = currentUser && currentUser.user_id ? currentUser.user_id : '';
+
+  return updateRowByKey_(APP_CONFIG.SHEETS.MASTER_ITEM, 'kode_item', kodeItem, {
+    harga_dasar: Number(hargaDasar || 0),
+    harga_default: Number(hargaDasar || 0),
+    diupdate_oleh: userLabel,
+    tanggal_update_harga: now.tanggal + ' ' + now.jam
+  });
 }
 
 function getBrandLogoDataUrl_() {

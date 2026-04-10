@@ -171,6 +171,9 @@ var APP_CONFIG = {
       'nama_item',
       'satuan',
       'harga_default',
+      'harga_dasar',
+      'diupdate_oleh',
+      'tanggal_update_harga',
       'status_aktif'
     ],
     MASTER_STATUS: [

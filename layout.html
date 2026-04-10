@@ -248,6 +248,58 @@
           <section class="form-card">
             <div class="panel-header">
               <div>
+                <h2>Harga Dasar Item</h2>
+                <p class="panel-subtitle">Sumber harga global untuk sales dan CS/Admin. Harga di bawah batas ini akan masuk approval.</p>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <label class="field">
+                <span>Cari Item</span>
+                <input id="approver_price_search" type="text" placeholder="Cari kode item atau nama produk" />
+              </label>
+            </div>
+
+            <div class="summary-grid approver-summary-grid">
+              <article class="summary-card">
+                <span class="summary-label">Item Aktif</span>
+                <strong class="summary-value" id="summaryBasePriceItems">0</strong>
+                <span class="summary-note">Produk aktif yang bisa dijual di sales dan CS/Admin</span>
+              </article>
+              <article class="summary-card">
+                <span class="summary-label">Harga Sudah Diisi</span>
+                <strong class="summary-value" id="summaryBasePriceReady">0</strong>
+                <span class="summary-note">Produk yang sudah punya harga dasar approver</span>
+              </article>
+              <article class="summary-card">
+                <span class="summary-label">Belum Diisi</span>
+                <strong class="summary-value" id="summaryBasePriceMissing">0</strong>
+                <span class="summary-note">Produk ini belum bisa dipakai kalau harga dasar masih kosong</span>
+              </article>
+            </div>
+
+            <div class="table-wrap">
+              <table class="data-table approver-price-table">
+                <thead>
+                  <tr>
+                    <th>Kode</th>
+                    <th>Produk</th>
+                    <th>Satuan</th>
+                    <th>Harga Dasar</th>
+                    <th>Update</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="approverPriceTableBody">
+                  <tr><td colspan="6" class="empty-cell">Belum ada data item.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="form-card">
+            <div class="panel-header">
+              <div>
                 <h2>Approval Order</h2>
                 <p class="panel-subtitle">Daftar order yang butuh keputusan approver, diringkas supaya cepat dibaca dan ringan dipakai.</p>
               </div>

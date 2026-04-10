@@ -3,8 +3,10 @@ function submitSalesOrder(payload) {
 
   var now = getNowParts_();
   var noSo = generateDocNumber_(APP_CONFIG.DOC_PREFIX.SALES_ORDER);
-  var customerCheck = buildOrderCustomerCheck_(payload);
   var items = normalizeOrderItems_(payload);
+  var customerCheck = buildOrderCustomerCheck_(payload);
+  var priceCheck = buildOrderPriceCheck_(items);
+  var approvalDecision = mergeOrderApprovalChecks_(customerCheck, priceCheck);
   var totals = calculateOrderTotals_(items);
   var prioritasKirim = resolvePrioritasKirim_(payload.tanggal_kirim_rencana, now.timestamp);
   var salesOrderRow = {
@@ -34,12 +36,12 @@ function submitSalesOrder(payload) {
     jumlah_nota_overdue: customerCheck.jumlah_nota_overdue,
     tanggal_jatuh_tempo_terdekat: customerCheck.tanggal_jatuh_tempo_terdekat,
     catatan_piutang: customerCheck.catatan_piutang,
-    status_order: customerCheck.status_order,
+    status_order: approvalDecision.status_order,
     prioritas_kirim: prioritasKirim,
     tanggal_kirim_rencana: payload.tanggal_kirim_rencana,
     catatan: payload.catatan || '',
-    butuh_persetujuan: customerCheck.butuh_persetujuan,
-    alasan_hold: customerCheck.alasan_hold
+    butuh_persetujuan: approvalDecision.butuh_persetujuan,
+    alasan_hold: approvalDecision.alasan_hold
   };
 
   appendRowByHeaders_(APP_CONFIG.SHEETS.SALES_ORDER, salesOrderRow);
@@ -216,11 +218,54 @@ function normalizeOrderItems_(payload) {
   return items;
 }
 
+function buildOrderPriceCheck_(items) {
+  var violations = [];
+
+  (items || []).forEach(function(item, index) {
+    var product = getProductByNameServer_(item.nama_item);
+    var hargaDasar = Number(product.harga_dasar || product.harga_default || 0);
+
+    if (!product.nama_item) {
+      throw new Error('Item pada baris ' + (index + 1) + ' tidak ditemukan di MASTER_ITEM.');
+    }
+
+    if (hargaDasar <= 0) {
+      throw new Error('Harga dasar untuk item ' + item.nama_item + ' belum diinput approver.');
+    }
+
+    if (Number(item.harga || 0) < hargaDasar) {
+      violations.push(
+        'Harga ' + item.nama_item +
+        ' di bawah harga dasar Rp ' + formatNumberServer_(hargaDasar) +
+        ' (harga order Rp ' + formatNumberServer_(item.harga) + ')'
+      );
+    }
+  });
+
+  return {
+    butuh_persetujuan: violations.length ? 'Ya' : 'Tidak',
+    alasan_hold: violations.join('. ')
+  };
+}
+
+function mergeOrderApprovalChecks_(customerCheck, priceCheck) {
+  var reasons = [
+    String(customerCheck && customerCheck.alasan_hold || '').trim(),
+    String(priceCheck && priceCheck.alasan_hold || '').trim()
+  ].filter(Boolean);
+  var needsApproval = String(customerCheck && customerCheck.butuh_persetujuan || '') === 'Ya' ||
+    String(priceCheck && priceCheck.butuh_persetujuan || '') === 'Ya';
+
+  return {
+    status_order: needsApproval ? 'Menunggu Persetujuan' : 'Siap Kirim',
+    butuh_persetujuan: needsApproval ? 'Ya' : 'Tidak',
+    alasan_hold: reasons.join('. ')
+  };
+}
+
 function normalizeOrderItemRow_(item, index) {
   var normalizedItem = item || {};
-  var product = getProductCatalog_().find(function(row) {
-    return String(row.nama_item || '').trim() === String(normalizedItem.nama_item || '').trim();
-  }) || {};
+  var product = getProductByNameServer_(normalizedItem.nama_item);
   var qty = Number(normalizedItem.qty || 0);
   var harga = Number(normalizedItem.harga || 0);
   var diskon = Number(normalizedItem.diskon || 0);
@@ -241,6 +286,12 @@ function normalizeOrderItemRow_(item, index) {
     diskon: diskon,
     subtotal: subtotal > 0 ? subtotal : 0
   };
+}
+
+function getProductByNameServer_(itemName) {
+  return getProductCatalog_().find(function(row) {
+    return String(row.nama_item || '').trim() === String(itemName || '').trim();
+  }) || {};
 }
 
 function calculateOrderTotals_(items) {
@@ -385,9 +436,7 @@ function buildOrderQtyDisplay_(items) {
 }
 
 function getProductUnitByNameServer_(itemName) {
-  var product = getProductCatalog_().find(function(row) {
-    return String(row.nama_item || '').trim() === String(itemName || '').trim();
-  }) || {};
+  var product = getProductByNameServer_(itemName);
 
   return String(product.satuan || '').trim();
 }
