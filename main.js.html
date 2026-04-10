@@ -76,7 +76,8 @@
     document.getElementById('qty').addEventListener('input', calculateTotals_);
     document.getElementById('harga').addEventListener('input', calculateTotals_);
     document.getElementById('diskon').addEventListener('input', calculateTotals_);
-    document.getElementById('addSalesItemBtn').addEventListener('click', addSalesItem_);
+    document.getElementById('tanggal_kirim_rencana').addEventListener('change', syncSalesPaymentDueDate_);
+    document.getElementById('term_pembayaran').addEventListener('change', syncSalesPaymentDueDate_);
     document.getElementById('resetBtn').addEventListener('click', resetForm_);
     document.getElementById('salesOrderForm').addEventListener('submit', submitForm_);
     document.getElementById('loginForm').addEventListener('submit', submitLoginForm_);
@@ -104,7 +105,8 @@
     document.getElementById('admin_qty').addEventListener('input', calculateAdminTotals_);
     document.getElementById('admin_harga').addEventListener('input', calculateAdminTotals_);
     document.getElementById('admin_diskon').addEventListener('input', calculateAdminTotals_);
-    document.getElementById('addAdminItemBtn').addEventListener('click', addAdminItem_);
+    document.getElementById('admin_tanggal_kirim_rencana').addEventListener('change', syncAdminPaymentDueDate_);
+    document.getElementById('admin_term_pembayaran').addEventListener('change', syncAdminPaymentDueDate_);
     document.getElementById('resetAgentBtn').addEventListener('click', resetAgentForm_);
     document.getElementById('agentOrderForm').addEventListener('submit', submitAgentOrderForm_);
     document.getElementById('openAgentModalBtn').addEventListener('click', openAgentModal_);
@@ -1437,6 +1439,57 @@
     calculateAdminTotals_();
   }
 
+  function syncSalesPaymentDueDate_() {
+    syncPaymentDueDateByField_('tanggal_kirim_rencana', 'term_pembayaran', 'tanggal_jatuh_tempo');
+  }
+
+  function syncAdminPaymentDueDate_() {
+    syncPaymentDueDateByField_('admin_tanggal_kirim_rencana', 'admin_term_pembayaran', 'admin_tanggal_jatuh_tempo');
+  }
+
+  function syncPaymentDueDateByField_(deliveryFieldId, termFieldId, dueDateFieldId) {
+    var deliveryDate = normalizeDateKey_(getFieldValue_(deliveryFieldId));
+    var termValue = getFieldValue_(termFieldId);
+    var dueDate;
+
+    if (!deliveryDate) {
+      setFieldValue_(dueDateFieldId, '');
+      return;
+    }
+
+    dueDate = addDaysToIsoDate_(deliveryDate, getPaymentTermDays_(termValue));
+    setFieldValue_(dueDateFieldId, dueDate);
+  }
+
+  function getPaymentTermDays_(termValue) {
+    var normalizedTerm = normalizeClientText_(termValue);
+    var match = normalizedTerm.match(/(\d+)/);
+
+    if (!normalizedTerm || normalizedTerm === 'cash') {
+      return 0;
+    }
+
+    return match ? Number(match[1] || 0) : 0;
+  }
+
+  function addDaysToIsoDate_(isoDate, daysToAdd) {
+    var normalizedDate = normalizeDateKey_(isoDate);
+    var dateValue;
+
+    if (!normalizedDate) {
+      return '';
+    }
+
+    dateValue = new Date(normalizedDate + 'T00:00:00');
+    dateValue.setDate(dateValue.getDate() + Number(daysToAdd || 0));
+
+    return [
+      dateValue.getFullYear(),
+      String(dateValue.getMonth() + 1).padStart(2, '0'),
+      String(dateValue.getDate()).padStart(2, '0')
+    ].join('-');
+  }
+
   function clearCustomerInfo_() {
     setText_('infoStatusCustomer', '-');
     setText_('infoStatusPembayaran', '-');
@@ -2270,6 +2323,7 @@
     handleAdminJenisCustomerChange_();
     handleAdminProductChange_();
     setFieldValue_('admin_tanggal_kirim_rencana', getFieldValue_('tanggal_kirim_rencana'));
+    syncAdminPaymentDueDate_();
   }
 
   function openAgentModal_() {
@@ -2289,13 +2343,11 @@
     appState.approverFilterDate = appState.approverFilterDate || iso;
     appState.approverExportFilterDate = appState.approverExportFilterDate || iso;
     setFieldValue_('tanggal_kirim_rencana', iso);
-    setFieldValue_('tanggal_jatuh_tempo', '');
     setFieldValue_('subtotal', formatCurrencyInput_(0));
     setFieldValue_('diskon_total', formatCurrencyInput_(0));
     setFieldValue_('total', formatCurrencyInput_(0));
     setFieldValue_('line_subtotal', formatCurrencyInput_(0));
     setFieldValue_('admin_tanggal_kirim_rencana', iso);
-    setFieldValue_('admin_tanggal_jatuh_tempo', '');
     setFieldValue_('admin_subtotal', formatCurrencyInput_(0));
     setFieldValue_('admin_diskon_total', formatCurrencyInput_(0));
     setFieldValue_('admin_total', formatCurrencyInput_(0));
@@ -2304,6 +2356,8 @@
     setFieldValue_('approverFilterDate', appState.approverFilterDate);
     setFieldValue_('approverExportFilterDate', appState.approverExportFilterDate);
     updateSalesNewCustomerRequirements_(getJenisCustomer_() === 'Baru');
+    syncSalesPaymentDueDate_();
+    syncAdminPaymentDueDate_();
   }
 
   function ensureDeliveryFilterDate_() {
