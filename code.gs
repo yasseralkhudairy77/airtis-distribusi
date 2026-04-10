@@ -104,8 +104,28 @@ function getApproverDashboardData(userId) {
   });
 }
 
+function backfillCompletedOrdersVerification_() {
+  ensureSheetHeadersContain_(APP_CONFIG.SHEETS.SALES_ORDER, APP_CONFIG.HEADERS.SALES_ORDER);
+
+  getSheetData_(APP_CONFIG.SHEETS.SALES_ORDER).forEach(function(order) {
+    var noSo = String(order.no_so || '').trim();
+    var statusOrder = normalizeText_(order.status_order);
+    var statusVerifikasi = String(order.status_verifikasi_cs || '').trim();
+
+    if (!noSo || statusOrder !== 'selesai' || statusVerifikasi) {
+      return;
+    }
+
+    updateRowByKey_(APP_CONFIG.SHEETS.SALES_ORDER, 'no_so', noSo, {
+      status_verifikasi_cs: 'Sudah Dicek',
+      catatan_verifikasi_cs: 'Backfill otomatis untuk order selesai sebelum verifikasi CS diwajibkan.'
+    });
+  });
+}
+
 function getAdminDashboardData(userId) {
   requireCurrentUserRole_(['CS/Admin'], userId);
+  backfillCompletedOrdersVerification_();
   var currentUser = getCurrentUserProfile(userId);
   var salesOrders = getSheetData_(APP_CONFIG.SHEETS.SALES_ORDER);
   var deliveryOrders = getSheetData_(APP_CONFIG.SHEETS.SURAT_JALAN);

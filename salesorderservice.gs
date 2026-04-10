@@ -410,6 +410,7 @@ function buildSalesOrderClientRow_(order) {
   var source = order || {};
   var details = getSalesOrderDetailsForDisplay_(source);
   var totals = calculateOrderTotals_(details);
+  var derivedVerificationStatus = String(source.status_verifikasi_cs || '').trim();
   var finalTotals = details.reduce(function(result, detail) {
     result.subtotal_order += Number(detail.qty_terkirim || 0) * Number(detail.harga_final || 0);
     result.diskon_order += Number(detail.diskon_final || 0);
@@ -435,7 +436,7 @@ function buildSalesOrderClientRow_(order) {
     subtotal_final: Number(source.subtotal_final || finalTotals.subtotal_order || 0),
     diskon_final: Number(source.diskon_final || finalTotals.diskon_order || 0),
     total_final: Number(source.total_final || finalTotals.total_order || 0),
-    status_verifikasi_cs: String(source.status_verifikasi_cs || 'Belum Dicek').trim() || 'Belum Dicek',
+    status_verifikasi_cs: derivedVerificationStatus || (normalizeText_(source.status_order) === 'selesai' ? 'Sudah Dicek' : 'Belum Dicek'),
     diverifikasi_oleh: source.diverifikasi_oleh || '',
     tanggal_verifikasi_cs: source.tanggal_verifikasi_cs || '',
     catatan_verifikasi_cs: source.catatan_verifikasi_cs || ''
