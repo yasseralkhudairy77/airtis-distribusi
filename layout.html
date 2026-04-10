@@ -53,6 +53,12 @@
 
         <section class="tab-panel hidden" id="tab-sales" data-role="sales">
           <form id="salesOrderForm" class="order-form" onsubmit="return false;">
+            <section class="sales-hero-card">
+              <p class="sales-hero-kicker">Mode Sales Lapangan</p>
+              <h2>Form dibuat khusus agar nyaman di HP</h2>
+              <p class="sales-hero-text">Tulisan lebih besar, tombol lebih jelas, dan area input dibuat lebih lega agar mudah dipakai bahkan untuk user yang penglihatannya sudah tidak terlalu kuat.</p>
+            </section>
+
             <section class="form-card">
               <h2>Info Sales</h2>
               <div class="form-grid">
@@ -102,11 +108,11 @@
                 <div class="form-grid">
                   <label class="field">
                     <span>Nama Customer</span>
-                    <input id="nama_customer_input" name="nama_customer_input" type="text" />
+                    <input id="nama_customer_input" name="nama_customer_input" type="text" autocomplete="organization" />
                   </label>
                   <label class="field">
                     <span>PIC Customer</span>
-                    <input id="pic_customer" name="pic_customer" type="text" />
+                    <input id="pic_customer" name="pic_customer" type="text" autocomplete="name" />
                   </label>
                 </div>
 
@@ -117,7 +123,7 @@
                   </label>
                   <label class="field">
                     <span>No. HP Customer</span>
-                    <input id="no_hp_customer" name="no_hp_customer" type="text" />
+                    <input id="no_hp_customer" name="no_hp_customer" type="tel" inputmode="numeric" autocomplete="tel" />
                   </label>
                 </div>
 
@@ -131,11 +137,11 @@
                 <div class="form-grid">
                   <label class="field">
                     <span>Latitude</span>
-                    <input id="latitude" name="latitude" type="text" placeholder="-6.200000" />
+                    <input id="latitude" name="latitude" type="text" inputmode="decimal" placeholder="-6.200000" />
                   </label>
                   <label class="field">
                     <span>Longitude</span>
-                    <input id="longitude" name="longitude" type="text" placeholder="106.816666" />
+                    <input id="longitude" name="longitude" type="text" inputmode="decimal" placeholder="106.816666" />
                   </label>
                 </div>
               </div>
@@ -150,15 +156,15 @@
                 </label>
                 <label class="field">
                   <span>Qty</span>
-                  <input id="qty" name="qty" type="number" min="1" step="1" />
+                  <input id="qty" name="qty" type="number" min="1" step="1" inputmode="numeric" />
                 </label>
                 <label class="field">
                   <span>Harga</span>
-                  <input id="harga" name="harga" type="number" min="0" step="1" />
+                  <input id="harga" name="harga" type="number" min="0" step="1" inputmode="numeric" />
                 </label>
                 <label class="field">
                   <span>Diskon</span>
-                  <input id="diskon" name="diskon" type="number" min="0" step="1" value="0" />
+                  <input id="diskon" name="diskon" type="number" min="0" step="1" value="0" inputmode="numeric" />
                 </label>
                 <label class="field">
                   <span>Total Item</span>

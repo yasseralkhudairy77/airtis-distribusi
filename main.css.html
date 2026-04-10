@@ -232,6 +232,46 @@
     border-radius: 10px;
   }
 
+  #tab-sales {
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  #tab-sales .order-form {
+    gap: 20px;
+  }
+
+  .sales-hero-card {
+    padding: 22px 24px;
+    border: 1px solid #cfe0f5;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #eff7ff 0%, #ffffff 58%, #f8fbff 100%);
+    box-shadow: 0 12px 24px rgba(10, 110, 209, 0.08);
+  }
+
+  .sales-hero-kicker {
+    margin: 0 0 8px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sap-blue);
+  }
+
+  .sales-hero-card h2 {
+    margin-bottom: 10px;
+    font-size: 28px;
+    line-height: 1.2;
+  }
+
+  .sales-hero-text {
+    margin: 0;
+    font-size: 17px;
+    line-height: 1.7;
+    color: #425466;
+    max-width: 48rem;
+  }
+
   .plan-card {
     background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
     border: 1px solid var(--sap-border);
@@ -324,7 +364,9 @@
   }
 
   #tab-sales .field span {
-    font-size: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #27445d;
   }
 
   .plan-output-field {
@@ -405,16 +447,34 @@
   #tab-sales input,
   #tab-sales select,
   #tab-sales textarea {
-    min-height: 46px;
-    font-size: 16px;
+    min-height: 58px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border-color: #c7d7ea;
+    font-size: 18px;
+    line-height: 1.35;
+    box-shadow: inset 0 1px 2px rgba(10, 110, 209, 0.03);
   }
 
   #tab-sales textarea {
-    min-height: 96px;
+    min-height: 120px;
   }
 
   #tab-sales input[readonly] {
     font-weight: 600;
+    background: #f5f9fd;
+  }
+
+  #tab-sales input::placeholder,
+  #tab-sales textarea::placeholder {
+    color: #7c8b99;
+  }
+
+  #tab-sales input:focus,
+  #tab-sales select:focus,
+  #tab-sales textarea:focus {
+    border-color: #7db2e8;
+    box-shadow: 0 0 0 4px rgba(10, 110, 209, 0.12);
   }
 
   textarea {
@@ -555,9 +615,30 @@
   }
 
   #tab-sales .customer-info {
-    gap: 10px;
-    border-radius: 8px;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 18px;
+    border-radius: 16px;
+    border-color: #d8e5f2;
     background: linear-gradient(180deg, #fafcff 0%, #f4f8fc 100%);
+  }
+
+  #tab-sales .customer-info div {
+    display: grid;
+    gap: 4px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #e3edf7;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  #tab-sales .customer-info strong {
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
   }
 
   .table-wrap {
@@ -591,6 +672,90 @@
     color: var(--sap-muted);
     text-align: center;
     padding: 20px 12px;
+  }
+
+  #tab-sales .form-card,
+  #tab-sales .result-card {
+    border-radius: 18px;
+    border-color: #d7e4f0;
+    padding: 24px;
+    box-shadow: 0 10px 24px rgba(19, 54, 93, 0.06);
+  }
+
+  #tab-sales .form-card h2,
+  #tab-sales .result-card h2 {
+    font-size: 24px;
+    margin-bottom: 18px;
+  }
+
+  #tab-sales .radio-row {
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  #tab-sales .radio-pill span {
+    min-height: 54px;
+    padding: 12px 20px;
+    border-radius: 999px;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  #tab-sales .sales-item-table-wrap {
+    border-radius: 16px;
+    border-color: #dbe7f3;
+    background: #f9fbfe;
+  }
+
+  #tab-sales .data-table {
+    min-width: 0;
+    background: transparent;
+  }
+
+  #tab-sales .data-table th {
+    background: #edf5fc;
+    font-size: 15px;
+  }
+
+  #tab-sales .data-table td {
+    font-size: 15px;
+  }
+
+  #tab-sales .sales-item-meta strong {
+    font-size: 16px;
+  }
+
+  #tab-sales .sales-item-meta small {
+    font-size: 13px;
+  }
+
+  #tab-sales .empty-cell {
+    padding: 28px 18px;
+    font-size: 15px;
+  }
+
+  #tab-sales #resultContent {
+    font-size: 17px;
+  }
+
+  #tab-sales .sales-order-total-grid {
+    gap: 16px;
+  }
+
+  #tab-sales .sales-order-total-grid .field {
+    padding: 16px;
+    border: 1px solid #dce7f1;
+    border-radius: 16px;
+    background: #f8fbfe;
+  }
+
+  #tab-sales .sales-order-total-grid .field span {
+    font-size: 14px;
+  }
+
+  #tab-sales .sales-order-total-grid input {
+    min-height: 54px;
+    background: #fff;
   }
 
   .inline-actions {
@@ -751,6 +916,31 @@
     background: #ffe3e0;
   }
 
+  #tab-sales button {
+    min-height: 56px;
+    border-radius: 16px;
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  #tab-sales .detail-order-action-row {
+    justify-content: flex-start;
+  }
+
+  #tab-sales .detail-order-action-row .primary-btn {
+    min-width: 220px;
+  }
+
+  #tab-sales .action-row-sticky {
+    gap: 14px;
+    background: linear-gradient(180deg, rgba(245, 246, 247, 0) 0%, rgba(245, 246, 247, 0.88) 18%, rgba(245, 246, 247, 0.98) 100%);
+  }
+
+  #tab-sales .action-row-sticky .ghost-btn,
+  #tab-sales .action-row-sticky .primary-btn {
+    flex: 1 1 240px;
+  }
+
   @media (max-width: 760px) {
     .app-shell {
       padding: 0;
@@ -849,12 +1039,30 @@
     }
 
     #tab-sales .form-card {
-      padding: 16px 14px;
+      padding: 18px 16px;
+    }
+
+    #tab-sales {
+      max-width: none;
+    }
+
+    .sales-hero-card {
+      padding: 18px 16px;
+      border-radius: 16px;
+    }
+
+    .sales-hero-card h2 {
+      font-size: 24px;
+    }
+
+    .sales-hero-text {
+      font-size: 16px;
+      line-height: 1.65;
     }
 
     #tab-sales .radio-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 8px;
       margin-bottom: 14px;
     }
@@ -866,19 +1074,124 @@
     #tab-sales .radio-pill span {
       width: 100%;
       justify-content: center;
-      min-height: 44px;
+      min-height: 52px;
       text-align: center;
+      font-size: 17px;
     }
 
     #tab-sales .customer-info {
-      gap: 8px;
-      padding: 12px;
-      font-size: 13px;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      padding: 14px;
+      font-size: 14px;
     }
 
     #tab-sales .customer-info div {
       display: grid;
-      gap: 2px;
+      gap: 4px;
+      padding: 12px 13px;
+    }
+
+    #tab-sales input,
+    #tab-sales select,
+    #tab-sales textarea {
+      min-height: 56px;
+      padding: 14px 15px;
+      font-size: 17px;
+    }
+
+    #tab-sales textarea {
+      min-height: 112px;
+    }
+
+    #tab-sales .detail-order-action-row .primary-btn {
+      min-width: 0;
+    }
+
+    #tab-sales .sales-item-table-wrap {
+      overflow: visible;
+      border: 0;
+      background: transparent;
+    }
+
+    #tab-sales .sales-item-table-wrap .data-table,
+    #tab-sales .sales-item-table-wrap tbody,
+    #tab-sales .sales-item-table-wrap tr,
+    #tab-sales .sales-item-table-wrap td {
+      display: block;
+      width: 100%;
+    }
+
+    #tab-sales .sales-item-table-wrap .data-table {
+      min-width: 0;
+      background: transparent;
+    }
+
+    #tab-sales .sales-item-table-wrap thead {
+      display: none;
+    }
+
+    #tab-sales .sales-item-table-wrap tbody {
+      display: grid;
+      gap: 12px;
+    }
+
+    #tab-sales .sales-item-table-wrap tr {
+      border: 1px solid #dce7f2;
+      border-radius: 16px;
+      padding: 8px 0;
+      background: #fff;
+      box-shadow: 0 8px 18px rgba(18, 49, 84, 0.06);
+    }
+
+    #tab-sales .sales-item-table-wrap td {
+      position: relative;
+      border: 0;
+      padding: 10px 14px 10px 128px;
+      min-height: 42px;
+      font-size: 15px;
+    }
+
+    #tab-sales .sales-item-table-wrap td::before {
+      position: absolute;
+      left: 14px;
+      top: 10px;
+      width: 102px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #6a7a88;
+      content: "";
+    }
+
+    #tab-sales .sales-item-table-wrap td:nth-child(1)::before {
+      content: "Produk";
+    }
+
+    #tab-sales .sales-item-table-wrap td:nth-child(2)::before {
+      content: "Qty";
+    }
+
+    #tab-sales .sales-item-table-wrap td:nth-child(3)::before {
+      content: "Harga";
+    }
+
+    #tab-sales .sales-item-table-wrap td:nth-child(4)::before {
+      content: "Diskon";
+    }
+
+    #tab-sales .sales-item-table-wrap td:nth-child(5)::before {
+      content: "Subtotal";
+    }
+
+    #tab-sales .sales-item-table-wrap td:nth-child(6)::before {
+      content: "Aksi";
+    }
+
+    #tab-sales .sales-item-table-wrap .empty-cell {
+      padding: 24px 16px;
+      text-align: center;
     }
 
     #tab-sales .action-row-sticky {
@@ -886,14 +1199,15 @@
       bottom: 0;
       z-index: 20;
       margin: 0 -14px -14px;
-      padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
-      border-top: 1px solid var(--sap-border);
-      box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.06);
+      padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+      border-top: 1px solid #d9e5ef;
+      box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.08);
+      backdrop-filter: blur(6px);
     }
 
     #tab-sales .action-row-sticky button {
-      min-height: 48px;
-      font-size: 15px;
+      min-height: 54px;
+      font-size: 16px;
     }
 
     #tab-sales .result-card {
