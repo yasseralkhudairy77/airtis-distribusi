@@ -76,6 +76,7 @@
     document.getElementById('qty').addEventListener('input', calculateTotals_);
     document.getElementById('harga').addEventListener('input', calculateTotals_);
     document.getElementById('diskon').addEventListener('input', calculateTotals_);
+    document.getElementById('addSalesItemBtn').onclick = addSalesItem_;
     document.getElementById('tanggal_kirim_rencana').addEventListener('change', syncSalesPaymentDueDate_);
     document.getElementById('term_pembayaran').addEventListener('change', syncSalesPaymentDueDate_);
     document.getElementById('resetBtn').addEventListener('click', resetForm_);
@@ -105,6 +106,7 @@
     document.getElementById('admin_qty').addEventListener('input', calculateAdminTotals_);
     document.getElementById('admin_harga').addEventListener('input', calculateAdminTotals_);
     document.getElementById('admin_diskon').addEventListener('input', calculateAdminTotals_);
+    document.getElementById('addAdminItemBtn').onclick = addAdminItem_;
     document.getElementById('admin_tanggal_kirim_rencana').addEventListener('change', syncAdminPaymentDueDate_);
     document.getElementById('admin_term_pembayaran').addEventListener('change', syncAdminPaymentDueDate_);
     document.getElementById('resetAgentBtn').addEventListener('click', resetAgentForm_);
