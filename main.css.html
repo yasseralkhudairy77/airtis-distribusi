@@ -248,6 +248,18 @@
     margin-bottom: 14px;
   }
 
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 20px 0 12px;
+  }
+
+  .section-header-inline {
+    margin-bottom: 12px;
+  }
+
   .summary-grid {
     display: grid;
     gap: 12px;
@@ -587,6 +599,14 @@
     flex-wrap: wrap;
   }
 
+  .delivery-filter-actions {
+    align-items: center;
+  }
+
+  .delivery-filter-actions input[type="date"] {
+    min-width: 160px;
+  }
+
   .risk-summary {
     display: grid;
     gap: 4px;
@@ -814,6 +834,10 @@
     }
 
     .panel-header {
+      flex-direction: column;
+    }
+
+    .section-header {
       flex-direction: column;
     }
 
