@@ -84,7 +84,6 @@
     document.getElementById('refreshApproverBtn').addEventListener('click', loadApproverData_);
     document.getElementById('refreshApproverExportBtn').addEventListener('click', loadApproverData_);
     document.getElementById('downloadKledoBatchBtn').addEventListener('click', handleDownloadKledoExportBatch_);
-    document.getElementById('markKledoBatchUploadedBtn').addEventListener('click', handleMarkKledoBatchUploaded_);
     document.getElementById('approver_search').addEventListener('input', handleApproverSearchInput_);
     document.getElementById('approverFilterDate').addEventListener('change', handleApproverFilterDateChange_);
     document.getElementById('approverFilterTodayBtn').addEventListener('click', handleApproverFilterToday_);
@@ -440,7 +439,6 @@
 
     if (!tbody) return;
     document.getElementById('downloadKledoBatchBtn').disabled = batchButtonsDisabled;
-    document.getElementById('markKledoBatchUploadedBtn').disabled = batchButtonsDisabled;
 
     if (!orders.length) {
       tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">Belum ada order siap export Kledo.</td></tr>';
@@ -939,28 +937,6 @@
         renderResult_('Gagal membuat export Kledo: ' + error.message, true);
       })
       .generateKledoExportFromDashboard(appState.currentUser.user_id, {});
-  }
-
-  function handleMarkKledoBatchUploaded_() {
-    setStatusText_('Menandai batch sudah diupload ke Kledo...');
-
-    google.script.run
-      .withSuccessHandler(function(result) {
-        setStatusText_('Status export Kledo diperbarui');
-        renderResult_(
-          'Batch berhasil ditandai Sudah Export.\nJumlah SO: ' + String(result.order_count || 0) +
-          '\nNo SO: ' + String((result.no_so_list || []).join(', ') || '-'),
-          false
-        );
-        loadApproverData_();
-      })
-      .withFailureHandler(function(error) {
-        setStatusText_('Gagal update status export');
-        renderResult_('Gagal update status export Kledo: ' + error.message, true);
-      })
-      .markKledoExportedFromDashboard(appState.currentUser.user_id, {
-        catatan_export_kledo: 'Ditandai upload batch manual dari webapp approver'
-      });
   }
 
   function handleDeliveryFilterToday_() {
