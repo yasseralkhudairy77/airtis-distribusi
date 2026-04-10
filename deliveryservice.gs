@@ -206,6 +206,7 @@ function verifyDeliveredOrder(noSo, userId, payload) {
 function completeOrder(noSo, userId, catatanKirim) {
   var salesOrder = findSalesOrderByNoSo_(noSo);
   var result;
+  var now = getNowParts_();
 
   if (!salesOrder) {
     throw new Error('Sales order tidak ditemukan untuk no_so: ' + noSo);
@@ -218,10 +219,12 @@ function completeOrder(noSo, userId, catatanKirim) {
   result = updateDeliveryOrderStatus_(noSo, userId, 'Selesai', 'Selesai', catatanKirim);
 
   updateRowByKey_(APP_CONFIG.SHEETS.SALES_ORDER, 'no_so', noSo, {
-    status_export_kledo: 'Siap Export'
+    status_export_kledo: 'Siap Export',
+    tanggal_selesai: now.tanggal
   });
 
   result.status_export_kledo = 'Siap Export';
+  result.tanggal_selesai = now.tanggal;
   return result;
 }
 

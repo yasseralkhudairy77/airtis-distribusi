@@ -584,7 +584,7 @@
     var filterDate = normalizeDateKey_(appState.approverExportFilterDate);
 
     return (appState.exportOrders || []).slice().filter(function(row) {
-      var rowDate = normalizeDateKey_(row.tanggal_verifikasi_cs || row.tanggal_order);
+      var rowDate = normalizeDateKey_(row.tanggal_selesai || row.tanggal_verifikasi_cs || row.tanggal_order);
 
       if (!filterDate) {
         return true;

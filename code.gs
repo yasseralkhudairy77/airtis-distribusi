@@ -127,6 +127,7 @@ function getReadyKledoExportOrders_() {
       no_hp_customer: order.no_hp_customer || '',
       sales_nama: order.sales_nama || '',
       tanggal_order: order.tanggal_order || '',
+      tanggal_selesai: order.tanggal_selesai || '',
       tanggal_verifikasi_cs: order.tanggal_verifikasi_cs || '',
       tanggal_jatuh_tempo: order.tanggal_jatuh_tempo || '',
       tanggal_kirim: suratJalan.tanggal_kirim || order.tanggal_kirim_rencana || '',
@@ -150,6 +151,8 @@ function backfillCompletedOrdersVerification_() {
     var statusOrder = normalizeText_(order.status_order);
     var statusVerifikasi = String(order.status_verifikasi_cs || '').trim();
     var statusExport = String(order.status_export_kledo || '').trim();
+    var tanggalSelesai = normalizeSheetDateToYmd_(order.tanggal_selesai);
+    var suratJalan = findSuratJalanByNoSo_(noSo) || {};
     var updates = {};
 
     if (!noSo || statusOrder !== 'selesai') {
@@ -163,6 +166,14 @@ function backfillCompletedOrdersVerification_() {
 
     if (!statusExport) {
       updates.status_export_kledo = 'Siap Export';
+    }
+
+    if (!tanggalSelesai) {
+      updates.tanggal_selesai = normalizeSheetDateToYmd_(
+        suratJalan.tanggal_kirim ||
+        order.tanggal_verifikasi_cs ||
+        order.tanggal_order
+      );
     }
 
     if (!Object.keys(updates).length) {

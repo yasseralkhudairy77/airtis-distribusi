@@ -48,6 +48,7 @@ function submitSalesOrder(payload) {
     tanggal_export_kledo: '',
     diekspor_oleh: '',
     catatan_export_kledo: '',
+    tanggal_selesai: '',
     status_order: approvalDecision.status_order,
     prioritas_kirim: prioritasKirim,
     tanggal_kirim_rencana: payload.tanggal_kirim_rencana,
@@ -446,6 +447,7 @@ function buildSalesOrderClientRow_(order) {
     tanggal_export_kledo: source.tanggal_export_kledo || '',
     diekspor_oleh: source.diekspor_oleh || '',
     catatan_export_kledo: source.catatan_export_kledo || '',
+    tanggal_selesai: source.tanggal_selesai || '',
     diverifikasi_oleh: source.diverifikasi_oleh || '',
     tanggal_verifikasi_cs: source.tanggal_verifikasi_cs || '',
     catatan_verifikasi_cs: source.catatan_verifikasi_cs || ''

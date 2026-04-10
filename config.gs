@@ -124,6 +124,7 @@ var APP_CONFIG = {
       'tanggal_export_kledo',
       'diekspor_oleh',
       'catatan_export_kledo',
+      'tanggal_selesai',
       'status_order',
       'prioritas_kirim',
       'tanggal_kirim_rencana',
