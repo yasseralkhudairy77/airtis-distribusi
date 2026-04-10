@@ -2074,7 +2074,6 @@
   }
 
   function buildPrintDocument_(data) {
-    var printConfig = window.APP_BOOTSTRAP.printConfig || {};
     var title = 'Surat Jalan ' + escapeHtml_(data.no_surat_jalan || '');
     var printBodyHtml = buildCombinedPrintSheet_(data);
 
@@ -2085,122 +2084,93 @@
         '<meta charset="utf-8" />' +
         '<title>' + title + '</title>' +
         '<style>' +
+          '@page{size:9.5in 11in;margin:0;}' +
           '*{box-sizing:border-box;}' +
-          'body{font-family:' + escapeHtml_(printConfig.FONT_FAMILY || '"Courier New", monospace') + ';font-size:10.2px;color:#111;margin:0;background:#fff;}' +
-          '.print-wrap{width:' + escapeHtml_(String(printConfig.PAPER_WIDTH_MM || 210)) + 'mm;margin:0 auto;padding:2.5mm;}' +
-          '.sheet-block{height:284mm;border:1px dashed #222;padding:3mm;background:#fff;display:grid;grid-template-rows:minmax(0,1fr) auto minmax(0,1fr);gap:2mm;overflow:hidden;}' +
-          '.doc-section{min-height:0;display:flex;flex-direction:column;justify-content:space-between;}' +
-          '.doc-section.last{margin-bottom:0;}' +
-          '.doc-content{display:grid;gap:1.5mm;}' +
-          '.doc-footer{display:grid;gap:1.5mm;}' +
-          '.copy-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #222;padding-bottom:1.6mm;margin-bottom:1.6mm;gap:3mm;}' +
-          '.brand{display:flex;align-items:flex-start;gap:3mm;}' +
-          '.brand-logo{width:14mm;height:14mm;object-fit:contain;flex:0 0 auto;}' +
-          '.brand-title{font-size:13.2px;font-weight:bold;letter-spacing:0.2px;margin:0 0 .4mm;}' +
-          '.brand-subtitle{margin:0;font-size:8.4px;line-height:1.12;}' +
-          '.doc-title{text-align:right;font-size:8.4px;line-height:1.1;}' +
-          '.doc-title strong{display:block;font-size:13.2px;letter-spacing:.5px;}' +
-          '.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:1mm 3.5mm;margin:0;}' +
-          '.meta-item{display:grid;grid-template-columns:18mm 1fr;gap:1.2mm;font-size:8.8px;line-height:1.12;}' +
-          '.full-row{grid-column:1 / -1;}' +
-          '.address-box,.note-box{border:1px solid #222;padding:1.2mm;white-space:pre-line;font-size:8.4px;line-height:1.12;}' +
-          '.address-box{min-height:8mm;}' +
-          '.note-box{min-height:9mm;}' +
-          '.section-title{font-weight:bold;margin:0 0 .8mm;font-size:8.8px;}' +
-          'table{width:100%;border-collapse:collapse;margin-top:.8mm;table-layout:fixed;}' +
-          'th,td{border:1px solid #222;padding:.9mm 1.1mm;font-size:8.3px;text-align:left;vertical-align:top;line-height:1.08;}' +
-          'th{text-transform:uppercase;font-size:7.6px;letter-spacing:.15px;}' +
-          '.section-gap{margin-top:1.2mm;}' +
-          '.sign-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3mm;margin-top:1.6mm;}' +
-          '.sign-box{text-align:center;min-height:13mm;display:flex;flex-direction:column;justify-content:flex-end;}' +
-          '.sign-line{border-top:1px solid #222;padding-top:.8mm;font-size:7.8px;}' +
-          '.tear-line{border-top:2px dashed #666;padding-top:1mm;text-align:center;font-size:7.6px;letter-spacing:.35px;}' +
-          '.nota-grid{display:grid;grid-template-columns:1.18fr .82fr;gap:3mm;align-items:stretch;}' +
-          '.summary-box{border:1px solid #222;padding:1.2mm;display:grid;gap:.7mm;align-content:start;}' +
-          '.summary-row{display:grid;grid-template-columns:1fr auto;gap:2mm;font-size:8.4px;}' +
-          '.summary-row strong{font-size:8.8px;}' +
-          '.terbilang-box{border:1px solid #222;padding:1.2mm;min-height:12mm;font-size:8.4px;line-height:1.12;}' +
-          '.nota-note-list{margin:0;padding-left:3mm;display:grid;gap:.6mm;font-size:8.4px;line-height:1.12;}' +
-          '@page{size:' + escapeHtml_(String(printConfig.PAPER_WIDTH_MM || 210)) + 'mm ' + escapeHtml_(String(printConfig.PAPER_HEIGHT_MM || 297)) + 'mm;margin:2mm;}' +
-          '@media print{body{background:#fff}.print-wrap{width:auto;margin:0;padding:0}.sheet-block{page-break-inside:avoid}button{display:none}}' +
+          'body{margin:0;font-family:"Courier New",Courier,monospace;background:#fff;color:#111;}' +
+          '.sheet{width:9.5in;height:11in;margin:0 auto;position:relative;background:#fff;overflow:hidden;}' +
+          '.print-area{position:absolute;left:0.35in;right:0.35in;top:0.35in;bottom:0.35in;border:2px solid #222;padding:0.08in 0.12in;}' +
+          '.section-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #222;padding:0.06in 0 0.08in;}' +
+          '.company-block{display:flex;align-items:flex-start;gap:0.1in;}' +
+          '.company-logo{width:0.78in;height:auto;object-fit:contain;flex:0 0 auto;}' +
+          '.company-text{min-width:0;}' +
+          '.company{font-weight:700;font-size:0.22in;line-height:1.1;}' +
+          '.meta-line{font-size:0.12in;line-height:1.15;margin-top:0.03in;}' +
+          '.doc-title{text-align:right;font-weight:700;}' +
+          '.doc-title .title{font-size:0.26in;line-height:1;}' +
+          '.doc-title .number{font-size:0.22in;margin-top:0.04in;}' +
+          '.fields{margin-top:0.11in;display:grid;grid-template-columns:1fr 1fr;gap:0.06in 0.26in;}' +
+          '.field{display:grid;grid-template-columns:1.05in 0.14in 1fr;font-size:0.12in;align-items:baseline;}' +
+          '.field .label{font-weight:700;}' +
+          '.full-row{margin-top:0.08in;font-size:0.12in;}' +
+          '.full-row .label{font-weight:700;display:inline-block;width:1.05in;}' +
+          '.box-line{border:1px solid #222;min-height:0.3in;padding:0.05in 0.07in;white-space:pre-line;font-size:0.12in;line-height:1.2;}' +
+          '.section-title{font-weight:700;font-size:0.14in;margin:0.12in 0 0.07in;}' +
+          'table{width:100%;border-collapse:collapse;font-size:0.12in;table-layout:fixed;}' +
+          'th,td{border:1px solid #222;padding:0.05in 0.06in;vertical-align:top;}' +
+          'th{font-weight:700;text-align:center;}' +
+          '.center{text-align:center;}' +
+          '.right{text-align:right;}' +
+          '.notes-box{border:1px solid #222;padding:0.05in 0.07in;min-height:0.29in;font-size:0.12in;line-height:1.2;}' +
+          '.signatures{display:grid;grid-template-columns:repeat(4,1fr);gap:0.16in;margin-top:0.14in;}' +
+          '.sig{text-align:center;font-size:0.12in;font-weight:700;}' +
+          '.sig .line{border-top:1px solid #222;margin-bottom:0.06in;height:0.48in;}' +
+          '.perforation{position:relative;text-align:center;font-size:0.12in;font-weight:700;margin:0.09in 0 0.08in;border-top:3px dashed #222;}' +
+          '.perforation span{position:relative;top:-0.09in;background:transparent;padding:0 0.08in;}' +
+          '.split-grid{display:grid;grid-template-columns:62% 38%;gap:0.12in;}' +
+          '.summary table td:first-child{font-weight:700;}' +
+          '.summary .grand td{font-weight:700;}' +
+          '.tight td{height:0.26in;}' +
+          '.note-title{font-weight:700;margin-bottom:0.04in;}' +
+          '@media print{body{background:#fff}.sheet{margin:0 auto;page-break-inside:avoid;}}' +
         '</style>' +
       '</head>' +
       '<body onload="window.print()">' +
-        '<div class="print-wrap">' +
-          printBodyHtml +
-        '</div>' +
+        printBodyHtml +
       '</body>' +
       '</html>';
   }
 
   function buildCombinedPrintSheet_(data) {
     return '' +
-      '<section class="sheet-block">' +
-        buildSuratJalanSection_(data) +
-        '<div class="tear-line">---------------- GARIS POTONG / PERFORASI ----------------</div>' +
-        buildNotaSection_(data) +
-      '</section>';
+      '<div class="sheet">' +
+        '<div class="print-area">' +
+          buildSuratJalanSection_(data) +
+          '<div class="perforation"><span> </span></div>' +
+          buildNotaSection_(data) +
+        '</div>' +
+      '</div>';
   }
 
   function buildSuratJalanSection_(data) {
     var detailRows = buildPrintSuratJalanRows_(data.items);
 
     return '' +
-      '<section class="doc-section">' +
-        '<div class="copy-header">' +
-          '<div class="brand">' +
-            '<img class="brand-logo" src="' + escapeHtml_(window.APP_BOOTSTRAP.brandLogoDataUrl || '') + '" alt="ATS" />' +
-            '<div>' +
-              '<div class="brand-title">PT ABUYAMAS TIRTA SEJAHTERA</div>' +
-              '<p class="brand-subtitle">Jl. Kapling Blok EO No.31 RT.01 RW.09, Cijujung, Sukaraja, Bogor, Jawa Barat 16710</p>' +
-              '<p class="brand-subtitle">Telp: 081217002021 | Email: airtismarketingats@gmail.com</p>' +
-            '</div>' +
-          '</div>' +
-          '<div class="doc-title">' +
-            '<strong>SURAT JALAN</strong>' +
-            '<strong>' + escapeHtml_(data.no_surat_jalan || '-') + '</strong>' +
-          '</div>' +
+      '<section>' +
+        buildPrintHeader_('SURAT JALAN', data.no_surat_jalan || '-') +
+        '<div class="fields">' +
+          buildPrintField_('TANGGAL', formatPrintDate_(data.tanggal_kirim || data.tanggal_cetak || '')) +
+          buildPrintField_('NO SJ', data.no_surat_jalan || '-') +
+          buildPrintField_('NO SO', data.no_so || '-') +
+          buildPrintField_('NO NOTA', buildPrintNotaNumber_(data)) +
+          buildPrintField_('CUSTOMER', data.nama_customer || '-') +
+          buildPrintField_('PIC / HP', joinPrintValues_(data.pic_customer, data.no_hp_customer, ' / ') || '-') +
         '</div>' +
-        '<div class="doc-content">' +
-          '<div class="meta-grid">' +
-            buildPrintMetaItem_('Tanggal', formatPrintDate_(data.tanggal_kirim || data.tanggal_cetak || '')) +
-            buildPrintMetaItem_('No. SJ', data.no_surat_jalan) +
-            buildPrintMetaItem_('No SO', data.no_so) +
-            buildPrintMetaItem_('No. Nota', data.no_so) +
-            buildPrintMetaItem_('Customer', data.nama_customer) +
-            buildPrintMetaItem_('PIC / HP', joinPrintValues_(data.pic_customer, data.no_hp_customer, ' / ')) +
-            '<div class="full-row">' +
-              '<div class="section-title">Alamat</div>' +
-              '<div class="address-box">' + escapeHtml_(data.alamat_kirim || '-') + '</div>' +
-            '</div>' +
-          '</div>' +
-          '<div>' +
-            '<div class="section-title">Detail Barang</div>' +
-            '<table>' +
-              '<thead>' +
-                '<tr>' +
-                  '<th style="width:14mm;">No</th>' +
-                  '<th>Deskripsi Barang</th>' +
-                  '<th style="width:18mm;">Qty</th>' +
-                  '<th style="width:16mm;">Sat</th>' +
-                  '<th style="width:30mm;">Ket.</th>' +
-                '</tr>' +
-              '</thead>' +
-              '<tbody>' + detailRows + '</tbody>' +
-            '</table>' +
-          '</div>' +
-        '</div>' +
-        '<div class="doc-footer">' +
-          '<div>' +
-            '<div class="section-title">Catatan</div>' +
-            '<div class="note-box">' + escapeHtml_(buildSuratJalanNotes_(data) || '-') + '</div>' +
-          '</div>' +
-          '<div class="sign-grid">' +
-            buildPrintSignBox_('Penerima') +
-            buildPrintSignBox_('Gudang') +
-            buildPrintSignBox_('Admin') +
-            buildPrintSignBox_('Security') +
-          '</div>' +
+        '<div class="full-row"><span class="label">ALAMAT</span>: </div>' +
+        '<div class="box-line">' + escapeHtml_(data.alamat_kirim || '-') + '</div>' +
+        '<div class="section-title">DETAIL BARANG</div>' +
+        '<table class="tight">' +
+          '<thead>' +
+            '<tr><th style="width:6%">NO</th><th>DESKRIPSI BARANG</th><th style="width:10%">QTY</th><th style="width:10%">SAT</th><th style="width:19%">KET.</th></tr>' +
+          '</thead>' +
+          '<tbody>' + detailRows + '</tbody>' +
+        '</table>' +
+        '<div class="section-title">CATATAN OPERASIONAL</div>' +
+        '<div class="notes-box">' + buildPrintHtmlLines_(buildSuratJalanNotes_(data) || '-') + '</div>' +
+        '<div class="signatures">' +
+          buildPrintSignatureBox_('DIBUAT') +
+          buildPrintSignatureBox_('DRIVER') +
+          buildPrintSignatureBox_('GUDANG') +
+          buildPrintSignatureBox_('PENERIMA') +
         '</div>' +
       '</section>';
   }
@@ -2212,77 +2182,47 @@
     var total = Number(data.total || 0);
 
     return '' +
-      '<section class="doc-section last">' +
-        '<div class="copy-header">' +
-          '<div class="brand">' +
-            '<img class="brand-logo" src="' + escapeHtml_(window.APP_BOOTSTRAP.brandLogoDataUrl || '') + '" alt="ATS" />' +
-            '<div>' +
-              '<div class="brand-title">PT ABUYAMAS TIRTA SEJAHTERA</div>' +
-              '<p class="brand-subtitle">Jl. Kapling Blok EO No.31 RT.01 RW.09, Cijujung, Sukaraja, Bogor, Jawa Barat 16710</p>' +
-              '<p class="brand-subtitle">Telp: 081217002021 | Email: airtismarketingats@gmail.com</p>' +
-            '</div>' +
-          '</div>' +
-          '<div class="doc-title">' +
-            '<strong>NOTA</strong>' +
-            '<strong>' + escapeHtml_(data.no_so || '-') + '</strong>' +
-          '</div>' +
+      '<section>' +
+        buildPrintHeader_('NOTA', buildPrintNotaNumber_(data), true) +
+        '<div class="fields">' +
+          buildPrintField_('TANGGAL', formatPrintDate_(data.tanggal_kirim || data.tanggal_cetak || '')) +
+          buildPrintField_('NO SJ', data.no_surat_jalan || '-') +
+          buildPrintField_('NO NOTA', buildPrintNotaNumber_(data)) +
+          buildPrintField_('TERM', data.term_pembayaran || '-') +
+          buildPrintField_('CUSTOMER', data.nama_customer || '-') +
+          buildPrintField_('SALES', data.sales_nama || '-') +
         '</div>' +
-        '<div class="doc-content">' +
-          '<div class="meta-grid">' +
-            buildPrintMetaItem_('Tanggal', formatPrintDate_(data.tanggal_kirim || data.tanggal_cetak || '')) +
-            buildPrintMetaItem_('No. SJ', data.no_surat_jalan) +
-            buildPrintMetaItem_('No. Nota', data.no_so) +
-            buildPrintMetaItem_('Term Bayar', data.term_pembayaran) +
-            buildPrintMetaItem_('Customer', data.nama_customer) +
-            buildPrintMetaItem_('Sales', data.sales_nama) +
-            '<div class="full-row">' +
-              '<div class="section-title">Alamat</div>' +
-              '<div class="address-box">' + escapeHtml_(data.alamat_kirim || '-') + '</div>' +
+        '<div class="full-row"><span class="label">ALAMAT</span>: </div>' +
+        '<div class="box-line">' + escapeHtml_(data.alamat_kirim || '-') + '</div>' +
+        '<table class="tight" style="margin-top:0.12in;">' +
+          '<thead>' +
+            '<tr><th style="width:5%">NO</th><th>BARANG</th><th style="width:10%">QTY</th><th style="width:9%">SAT</th><th style="width:13%">HARGA</th><th style="width:10%">DISC</th><th style="width:13%">JUMLAH</th></tr>' +
+          '</thead>' +
+          '<tbody>' + detailRows + '</tbody>' +
+        '</table>' +
+        '<div class="split-grid" style="margin-top:0.12in;">' +
+          '<div>' +
+            '<div class="notes-box" style="min-height:0.48in;">' +
+              '<div class="note-title">CATATAN / TERBILANG</div>' +
+              buildPrintNotaNotesHtml_(data, total) +
             '</div>' +
           '</div>' +
-          '<div>' +
+          '<div class="summary">' +
             '<table>' +
-              '<thead>' +
-                '<tr>' +
-                  '<th style="width:12mm;">No</th>' +
-                  '<th>Barang</th>' +
-                  '<th style="width:16mm;">Qty</th>' +
-                  '<th style="width:14mm;">Sat</th>' +
-                  '<th style="width:24mm;">Harga</th>' +
-                  '<th style="width:20mm;">Diskon</th>' +
-                  '<th style="width:28mm;">Jumlah</th>' +
-                '</tr>' +
-              '</thead>' +
-              '<tbody>' + detailRows + '</tbody>' +
+              '<tbody>' +
+                '<tr><td colspan="2">RINGKASAN TAGIHAN</td></tr>' +
+                '<tr><td>SUBTOTAL</td><td class="right">' + escapeHtml_(formatPrintMoneyPlain_(subtotal)) + '</td></tr>' +
+                '<tr><td>DISKON</td><td class="right">' + escapeHtml_(formatPrintMoneyPlain_(diskon)) + '</td></tr>' +
+                '<tr class="grand"><td>GRAND TOTAL</td><td class="right">' + escapeHtml_(formatPrintMoneyPlain_(total)) + '</td></tr>' +
+              '</tbody>' +
             '</table>' +
           '</div>' +
         '</div>' +
-        '<div class="doc-footer">' +
-          '<div class="nota-grid">' +
-            '<div>' +
-              '<div class="section-title">Catatan Nota</div>' +
-              '<div class="note-box">' +
-                '<ul class="nota-note-list">' +
-                  '<li>Periksa barang saat diterima.</li>' +
-                  '<li>Pembayaran mengikuti term: ' + escapeHtml_(data.term_pembayaran || '-') + '.</li>' +
-                  '<li>Catatan order: ' + escapeHtml_(joinPrintValues_(data.catatan_order, data.catatan_kirim, ' | ') || '-') + '</li>' +
-                '</ul>' +
-              '</div>' +
-              '<div class="section-title section-gap">Terbilang</div>' +
-              '<div class="terbilang-box">' + escapeHtml_(buildTerbilangRupiah_(total)) + '</div>' +
-            '</div>' +
-            '<div class="summary-box">' +
-              buildPrintSummaryRow_('Subtotal', subtotal) +
-              buildPrintSummaryRow_('Diskon', diskon) +
-              buildPrintSummaryRow_('Grand Total', total, true) +
-            '</div>' +
-          '</div>' +
-          '<div class="sign-grid">' +
-            buildPrintSignBox_('Dibuat') +
-            buildPrintSignBox_('Disetujui') +
-            buildPrintSignBox_('Pelanggan') +
-            buildPrintSignBox_('Stempel / Paraf') +
-          '</div>' +
+        '<div class="signatures" style="margin-top:0.18in;">' +
+          buildPrintSignatureBox_('DIBUAT') +
+          buildPrintSignatureBox_('DISETUJUI') +
+          buildPrintSignatureBox_('PELANGGAN') +
+          buildPrintSignatureBox_('STEMPEL / PARAF') +
         '</div>' +
       '</section>';
   }
@@ -2292,15 +2232,15 @@
     var rowsHtml = details.map(function(item, index) {
       return '' +
         '<tr>' +
-          '<td>' + escapeHtml_(String(index + 1)) + '</td>' +
+          '<td class="center">' + escapeHtml_(String(index + 1)) + '</td>' +
           '<td>' + escapeHtml_(item.nama_item || '-') + '</td>' +
-          '<td>' + escapeHtml_(formatNumber_(item.qty || 0)) + '</td>' +
-          '<td>' + escapeHtml_(item.satuan || '-') + '</td>' +
+          '<td class="center">' + escapeHtml_(formatNumber_(item.qty || 0)) + '</td>' +
+          '<td class="center">' + escapeHtml_(formatPrintUnit_(item.satuan || '-')) + '</td>' +
           '<td></td>' +
         '</tr>';
     }).join('');
 
-    while (details.length < 3) {
+    while (details.length < 4) {
       rowsHtml += '<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>';
       details.push({});
     }
@@ -2313,17 +2253,17 @@
     var rowsHtml = details.map(function(item, index) {
       return '' +
         '<tr>' +
-          '<td>' + escapeHtml_(String(index + 1)) + '</td>' +
+          '<td class="center">' + escapeHtml_(String(index + 1)) + '</td>' +
           '<td>' + escapeHtml_(item.nama_item || '-') + '</td>' +
-          '<td>' + escapeHtml_(formatNumber_(item.qty || 0)) + '</td>' +
-          '<td>' + escapeHtml_(item.satuan || '-') + '</td>' +
-          '<td>' + escapeHtml_(formatCurrencyInput_(item.harga || 0)) + '</td>' +
-          '<td>' + escapeHtml_(formatCurrencyInput_(item.diskon || 0)) + '</td>' +
-          '<td>' + escapeHtml_(formatCurrencyInput_(item.subtotal || 0)) + '</td>' +
+          '<td class="center">' + escapeHtml_(formatNumber_(item.qty || 0)) + '</td>' +
+          '<td class="center">' + escapeHtml_(formatPrintUnit_(item.satuan || '-')) + '</td>' +
+          '<td class="right">' + escapeHtml_(formatPrintMoneyPlain_(item.harga || 0)) + '</td>' +
+          '<td class="right">' + escapeHtml_(formatPrintMoneyPlain_(item.diskon || 0)) + '</td>' +
+          '<td class="right">' + escapeHtml_(formatPrintMoneyPlain_(item.subtotal || 0)) + '</td>' +
         '</tr>';
     }).join('');
 
-    while (details.length < 2) {
+    while (details.length < 3) {
       rowsHtml += '<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
       details.push({});
     }
@@ -2331,26 +2271,37 @@
     return rowsHtml;
   }
 
-  function buildPrintMetaItem_(label, value) {
+  function buildPrintHeader_(title, number, compactTop) {
     return '' +
-      '<div class="meta-item">' +
-        '<div>' + escapeHtml_(label) + '</div>' +
-        '<div>: ' + escapeHtml_(value || '-') + '</div>' +
+      '<div class="section-header"' + (compactTop ? ' style="padding-top:0;"' : '') + '>' +
+        '<div class="company-block">' +
+          '<img class="company-logo" alt="Logo PT Abuyamas Tirta Sejahtera" src="' + escapeHtml_(window.APP_BOOTSTRAP.brandLogoDataUrl || '') + '" />' +
+          '<div class="company-text">' +
+            '<div class="company">PT ABUYAMAS TIRTA SEJAHTERA</div>' +
+            '<div class="meta-line">JL. KAPLING BLOK EO NO.31 RT.01 RW.09, CIJUJUNG, SUKARAJA, BOGOR</div>' +
+            '<div class="meta-line">TELP 081217002021  EMAIL airtismarketingats@gmail.com</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="doc-title">' +
+          '<div class="title">' + escapeHtml_(title || '-') + '</div>' +
+          '<div class="number">' + escapeHtml_(number || '-') + '</div>' +
+        '</div>' +
       '</div>';
   }
 
-  function buildPrintSignBox_(label) {
+  function buildPrintField_(label, value) {
     return '' +
-      '<div class="sign-box">' +
-        '<div class="sign-line">' + escapeHtml_(label) + '</div>' +
+      '<div class="field">' +
+        '<div class="label">' + escapeHtml_(label || '-') + '</div>' +
+        '<div>:</div>' +
+        '<div>' + escapeHtml_(value || '-') + '</div>' +
       '</div>';
   }
 
-  function buildPrintSummaryRow_(label, value, isStrong) {
+  function buildPrintSignatureBox_(label) {
     return '' +
-      '<div class="summary-row">' +
-        '<span>' + (isStrong ? '<strong>' + escapeHtml_(label) + '</strong>' : escapeHtml_(label)) + '</span>' +
-        '<span>' + (isStrong ? '<strong>' + escapeHtml_(formatCurrencyInput_(value || 0)) + '</strong>' : escapeHtml_(formatCurrencyInput_(value || 0))) + '</span>' +
+      '<div class="sig">' +
+        '<div class="line"></div>' + escapeHtml_(label || '-') +
       '</div>';
   }
 
@@ -2390,15 +2341,15 @@
     var picHp = joinPrintValues_(data.pic_customer, data.no_hp_customer, ' / ');
 
     if (picHp) {
-      notes.push('PIC / HP: ' + picHp);
+      notes.push('PIC : ' + picHp);
     }
 
     if (data.catatan_order) {
-      notes.push('Order: ' + data.catatan_order);
+      notes.push('ORDER : ' + data.catatan_order);
     }
 
     if (data.catatan_kirim) {
-      notes.push('Kirim: ' + data.catatan_kirim);
+      notes.push('KIRIM : ' + data.catatan_kirim);
     }
 
     return notes.join('\n');
@@ -2471,5 +2422,43 @@
     });
 
     return values.join(separator || ' ');
+  }
+
+  function buildPrintNotaNumber_(data) {
+    var noSo = String(data && data.no_so ? data.no_so : '').trim();
+
+    if (!noSo) {
+      return '-';
+    }
+
+    return noSo.replace(/^SO/i, 'NT');
+  }
+
+  function formatPrintUnit_(value) {
+    return String(value || '-').trim().toUpperCase() || '-';
+  }
+
+  function formatPrintMoneyPlain_(value) {
+    return formatNumber_(Number(value || 0));
+  }
+
+  function buildPrintHtmlLines_(text) {
+    return escapeHtml_(text || '-').replace(/\n/g, '<br>');
+  }
+
+  function buildPrintNotaNotesHtml_(data, total) {
+    var notes = [];
+    var orderNotes = joinPrintValues_(data.catatan_order, data.catatan_kirim, ' | ');
+
+    notes.push('- PERIKSA BARANG SAAT DITERIMA.');
+    notes.push('- PEMBAYARAN MENGIKUTI TERM YANG DISEPAKATI.');
+
+    if (orderNotes) {
+      notes.push('- CATATAN: ' + orderNotes);
+    }
+
+    return buildPrintHtmlLines_(notes.join('\n')) + ' &nbsp;&nbsp; <strong>' +
+      escapeHtml_(buildTerbilangRupiah_(total).toUpperCase()) +
+    '</strong>';
   }
 </script>
