@@ -57,6 +57,7 @@
 
     document.getElementById('sales_id').addEventListener('change', handleSalesChange_);
     document.getElementById('customer_id').addEventListener('change', handleCustomerChange_);
+    document.getElementById('customer_search').addEventListener('input', handleCustomerSearchInput_);
     document.getElementById('item').addEventListener('change', handleProductChange_);
     document.querySelectorAll('input[name="jenis_customer"]').forEach(function(input) {
       input.addEventListener('change', handleJenisCustomerChange_);
@@ -265,19 +266,21 @@
     var customerSelect = document.getElementById('customer_id');
     customerSelect.innerHTML = '<option value="">Pilih customer lama</option>';
 
-    appState.customers.forEach(function(customer) {
+    getSortedCustomersByName_(appState.customers).forEach(function(customer) {
       var option = document.createElement('option');
       option.value = customer.kode_customer;
       option.textContent = customer.nama_customer + ' (' + customer.kode_customer + ')';
       customerSelect.appendChild(option);
     });
+
+    renderSalesCustomerSearchResults_(getFieldValue_('customer_search'));
   }
 
   function renderAdminCustomerOptions_() {
     var customerSelect = document.getElementById('admin_customer_id');
     customerSelect.innerHTML = '<option value="">Pilih agen / customer</option>';
 
-    appState.customers.forEach(function(customer) {
+    getSortedCustomersByName_(appState.customers).forEach(function(customer) {
       var option = document.createElement('option');
       option.value = customer.kode_customer;
       option.textContent = customer.nama_customer + ' (' + customer.kode_customer + ')';
@@ -599,6 +602,12 @@
     document.getElementById('sales_nama').value = selectedOption ? (selectedOption.dataset.nama || fallbackName) : fallbackName;
   }
 
+  function handleCustomerSearchInput_() {
+    setFieldValue_('customer_id', '');
+    clearCustomerInfo_();
+    renderSalesCustomerSearchResults_(getFieldValue_('customer_search'));
+  }
+
   function handleJenisCustomerChange_() {
     var jenisCustomer = getJenisCustomer_();
     var isLama = jenisCustomer === 'Lama';
@@ -608,8 +617,10 @@
     updateSalesNewCustomerRequirements_(!isLama);
 
     if (isLama) {
+      renderSalesCustomerSearchResults_(getFieldValue_('customer_search'));
       handleCustomerChange_();
     } else {
+      clearSalesCustomerSelection_();
       clearCustomerInfo_();
       setFieldValue_('customer_id', '');
       setFieldValue_('nama_customer_input', '');
@@ -627,9 +638,11 @@
 
     if (!customer) {
       clearCustomerInfo_();
+      renderSalesCustomerSearchResults_(getFieldValue_('customer_search'));
       return;
     }
 
+    setFieldValue_('customer_search', buildCustomerSearchLabel_(customer));
     setText_('infoStatusCustomer', customer.status_customer || '-');
     setText_('infoStatusPembayaran', customer.status_pembayaran || '-');
     setText_('infoTotalTunggakan', formatCustomerMoney_(customer.total_tunggakan));
@@ -647,6 +660,7 @@
     setFieldValue_('link_google_maps', customer.link_google_maps || '');
     setFieldValue_('latitude', customer.latitude || '');
     setFieldValue_('longitude', customer.longitude || '');
+    renderSalesCustomerSearchResults_(getFieldValue_('customer_search'));
   }
 
   function handleAdminJenisCustomerChange_() {
@@ -766,6 +780,12 @@
     setText_('infoPic', '-');
     setText_('infoHp', '-');
     setText_('infoCatatanPiutang', '-');
+  }
+
+  function clearSalesCustomerSelection_() {
+    setFieldValue_('customer_id', '');
+    setFieldValue_('customer_search', '');
+    renderSalesCustomerSearchResults_('');
   }
 
   function clearAdminCustomerInfo_() {
@@ -1480,6 +1500,7 @@
     document.getElementById('salesOrderForm').reset();
     appState.salesOrderItems = [];
     setTodayAsDefault_();
+    clearSalesCustomerSelection_();
     clearCustomerInfo_();
     setFieldValue_('sales_nama', '');
     renderSalesOrderItems_();
@@ -1494,6 +1515,7 @@
   function clearSalesOrderFormAfterSubmit_() {
     document.getElementById('salesOrderForm').reset();
     appState.salesOrderItems = [];
+    clearSalesCustomerSelection_();
     clearCustomerInfo_();
     document.querySelector('input[name="jenis_customer"][value="Lama"]').checked = true;
     setTodayAsDefault_();
@@ -1572,6 +1594,86 @@
     return appState.customers.find(function(customer) {
       return customer.kode_customer === customerId;
     }) || null;
+  }
+
+  function getSortedCustomersByName_(customers) {
+    return (Array.isArray(customers) ? customers.slice() : []).sort(function(left, right) {
+      var leftName = normalizeSearchText_(left && left.nama_customer);
+      var rightName = normalizeSearchText_(right && right.nama_customer);
+
+      if (leftName < rightName) return -1;
+      if (leftName > rightName) return 1;
+
+      return String(left && left.kode_customer || '').localeCompare(String(right && right.kode_customer || ''), 'id-ID');
+    });
+  }
+
+  function renderSalesCustomerSearchResults_(query) {
+    var container = document.getElementById('customerSearchResults');
+    var selectedCustomerId = getFieldValue_('customer_id');
+    var filteredCustomers;
+
+    if (!container) return;
+
+    filteredCustomers = filterCustomersByQuery_(query).slice(0, 20);
+
+    if (!filteredCustomers.length) {
+      container.innerHTML = '<div class="customer-search-empty">Customer tidak ditemukan. Coba ketik nama, kode customer, PIC, atau no. HP.</div>';
+      return;
+    }
+
+    container.innerHTML = filteredCustomers.map(function(customer) {
+      var meta = [
+        String(customer.kode_customer || '').trim(),
+        String(customer.pic || '').trim(),
+        String(customer.no_hp || '').trim()
+      ].filter(function(value) {
+        return value !== '';
+      }).join(' | ');
+
+      return '' +
+        '<button type="button" class="customer-search-option' + (selectedCustomerId === customer.kode_customer ? ' active' : '') + '" onclick="selectCustomerFromSearch_(\'' + escapeJs_(customer.kode_customer) + '\')">' +
+          '<strong>' + escapeHtml_(customer.nama_customer || '-') + '</strong>' +
+          '<small>' + escapeHtml_(meta || String(customer.alamat || '-').trim() || '-') + '</small>' +
+        '</button>';
+    }).join('');
+  }
+
+  function filterCustomersByQuery_(query) {
+    var normalizedQuery = normalizeSearchText_(query);
+
+    return getSortedCustomersByName_(appState.customers).filter(function(customer) {
+      var haystack = [
+        customer.nama_customer,
+        customer.kode_customer,
+        customer.pic,
+        customer.no_hp
+      ].map(normalizeSearchText_).join(' ');
+
+      if (!normalizedQuery) {
+        return true;
+      }
+
+      return haystack.indexOf(normalizedQuery) !== -1;
+    });
+  }
+
+  function selectCustomerFromSearch_(customerId) {
+    setFieldValue_('customer_id', customerId || '');
+    handleCustomerChange_();
+    setStatusText_('Customer lama berhasil dipilih');
+  }
+
+  function buildCustomerSearchLabel_(customer) {
+    if (!customer) {
+      return '';
+    }
+
+    return String(customer.nama_customer || '').trim() + ' (' + String(customer.kode_customer || '').trim() + ')';
+  }
+
+  function normalizeSearchText_(value) {
+    return String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
   }
 
   function getSelectedAdminCustomer_() {

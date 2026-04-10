@@ -82,9 +82,14 @@
 
               <div id="customerLamaSection" class="stack">
                 <label class="field">
+                  <span>Cari Customer</span>
+                  <input id="customer_search" name="customer_search" type="text" autocomplete="off" placeholder="Ketik nama, kode customer, PIC, atau no. HP" />
+                </label>
+                <label class="field hidden">
                   <span>Pilih Customer</span>
                   <select id="customer_id" name="customer_id"></select>
                 </label>
+                <div class="customer-search-results" id="customerSearchResults"></div>
                 <div class="customer-info" id="customerInfo">
                   <div><strong>Status Customer:</strong> <span id="infoStatusCustomer">-</span></div>
                   <div><strong>Status Pembayaran:</strong> <span id="infoStatusPembayaran">-</span></div>
