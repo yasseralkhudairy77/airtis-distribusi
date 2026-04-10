@@ -2240,11 +2240,6 @@
         '</tr>';
     }).join('');
 
-    while (details.length < 4) {
-      rowsHtml += '<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>';
-      details.push({});
-    }
-
     return rowsHtml;
   }
 
@@ -2262,11 +2257,6 @@
           '<td class="right">' + escapeHtml_(formatPrintMoneyPlain_(item.subtotal || 0)) + '</td>' +
         '</tr>';
     }).join('');
-
-    while (details.length < 3) {
-      rowsHtml += '<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
-      details.push({});
-    }
 
     return rowsHtml;
   }
