@@ -127,6 +127,7 @@ function getReadyKledoExportOrders_() {
       no_hp_customer: order.no_hp_customer || '',
       sales_nama: order.sales_nama || '',
       tanggal_order: order.tanggal_order || '',
+      tanggal_verifikasi_cs: order.tanggal_verifikasi_cs || '',
       tanggal_jatuh_tempo: order.tanggal_jatuh_tempo || '',
       tanggal_kirim: suratJalan.tanggal_kirim || order.tanggal_kirim_rencana || '',
       term_pembayaran: order.term_pembayaran || '',

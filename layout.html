@@ -274,6 +274,17 @@
                   <span>Cari Approval</span>
                   <input id="approver_search" type="text" placeholder="Cari No SO, customer, sales, atau item" />
                 </label>
+                <label class="field">
+                  <span>Tanggal Approval</span>
+                  <input id="approverFilterDate" type="date" />
+                </label>
+                <div class="field field-inline-actions">
+                  <span>Filter Cepat</span>
+                  <div class="inline-actions">
+                    <button type="button" class="ghost-btn" id="approverFilterTodayBtn">Hari Ini</button>
+                    <button type="button" class="ghost-btn" id="approverFilterAllBtn">Semua</button>
+                  </div>
+                </div>
               </div>
 
               <div class="summary-grid approver-summary-grid">
@@ -292,6 +303,20 @@
                   <strong class="summary-value" id="summaryApprovalOverdue">0</strong>
                   <span class="summary-note">Order dengan overdue, jatuh tempo, atau total tunggakan</span>
                 </article>
+              </div>
+
+              <div class="form-grid">
+                <label class="field">
+                  <span>Tanggal Siap Export</span>
+                  <input id="approverExportFilterDate" type="date" />
+                </label>
+                <div class="field field-inline-actions">
+                  <span>Filter Cepat</span>
+                  <div class="inline-actions">
+                    <button type="button" class="ghost-btn" id="approverExportFilterTodayBtn">Hari Ini</button>
+                    <button type="button" class="ghost-btn" id="approverExportFilterAllBtn">Semua</button>
+                  </div>
+                </div>
               </div>
 
               <div class="table-wrap">

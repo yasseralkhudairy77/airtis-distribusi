@@ -13,6 +13,8 @@
     exportOrders: [],
     approverSearch: '',
     approverPriceSearch: '',
+    approverFilterDate: '',
+    approverExportFilterDate: '',
     readyOrders: [],
     deliveryOrders: [],
     deliveryFilterDate: '',
@@ -84,7 +86,13 @@
     document.getElementById('downloadKledoBatchBtn').addEventListener('click', handleDownloadKledoExportBatch_);
     document.getElementById('markKledoBatchUploadedBtn').addEventListener('click', handleMarkKledoBatchUploaded_);
     document.getElementById('approver_search').addEventListener('input', handleApproverSearchInput_);
+    document.getElementById('approverFilterDate').addEventListener('change', handleApproverFilterDateChange_);
+    document.getElementById('approverFilterTodayBtn').addEventListener('click', handleApproverFilterToday_);
+    document.getElementById('approverFilterAllBtn').addEventListener('click', handleApproverFilterAll_);
     document.getElementById('approver_price_search').addEventListener('input', handleApproverPriceSearchInput_);
+    document.getElementById('approverExportFilterDate').addEventListener('change', handleApproverExportFilterDateChange_);
+    document.getElementById('approverExportFilterTodayBtn').addEventListener('click', handleApproverExportFilterToday_);
+    document.getElementById('approverExportFilterAllBtn').addEventListener('click', handleApproverExportFilterAll_);
     document.getElementById('refreshAdminBtn').addEventListener('click', loadAdminData_);
     document.getElementById('deliveryFilterDate').addEventListener('change', handleDeliveryFilterChange_);
     document.getElementById('deliveryFilterTodayBtn').addEventListener('click', handleDeliveryFilterToday_);
@@ -203,6 +211,8 @@
           renderApproverExportTable_();
           setFieldValue_('approver_search', '');
           setFieldValue_('approver_price_search', '');
+          setFieldValue_('approverFilterDate', appState.approverFilterDate);
+          setFieldValue_('approverExportFilterDate', appState.approverExportFilterDate);
           renderApproverTable_();
 
           if (callback) callback();
@@ -399,7 +409,7 @@
   }
 
   function renderApproverSummary_() {
-    var approvals = appState.approvals || [];
+    var approvals = getFilteredApprovals_();
 
     setText_('summaryApprovalPending', String(approvals.length || 0));
     setText_('summaryApprovalHeld', String(approvals.filter(function(row) {
@@ -413,7 +423,7 @@
   }
 
   function renderApproverExportSummary_() {
-    var orders = appState.exportOrders || [];
+    var orders = getFilteredExportOrders_();
     var totalFinal = orders.reduce(function(result, row) {
       return result + Number(row.total_final || 0);
     }, 0);
@@ -425,7 +435,7 @@
 
   function renderApproverExportTable_() {
     var tbody = document.getElementById('approverExportTableBody');
-    var orders = appState.exportOrders || [];
+    var orders = getFilteredExportOrders_();
     var batchButtonsDisabled = !orders.length;
 
     if (!tbody) return;
@@ -542,9 +552,15 @@
 
   function getFilteredApprovals_() {
     var query = normalizeSearchText_(appState.approverSearch);
+    var filterDate = normalizeDateKey_(appState.approverFilterDate);
 
     return (appState.approvals || []).slice().sort(compareApprovalsByPriority_).filter(function(row) {
       var haystack;
+      var rowDate = normalizeDateKey_(row.tanggal_pengajuan);
+
+      if (filterDate && rowDate !== filterDate) {
+        return false;
+      }
 
       if (!query) {
         return true;
@@ -561,6 +577,20 @@
       ].map(normalizeSearchText_).join(' ');
 
       return haystack.indexOf(query) !== -1;
+    });
+  }
+
+  function getFilteredExportOrders_() {
+    var filterDate = normalizeDateKey_(appState.approverExportFilterDate);
+
+    return (appState.exportOrders || []).slice().filter(function(row) {
+      var rowDate = normalizeDateKey_(row.tanggal_verifikasi_cs || row.tanggal_order);
+
+      if (!filterDate) {
+        return true;
+      }
+
+      return rowDate === filterDate;
     });
   }
 
@@ -803,12 +833,57 @@
 
   function handleApproverSearchInput_() {
     appState.approverSearch = getFieldValue_('approver_search');
+    renderApproverSummary_();
     renderApproverTable_();
+  }
+
+  function handleApproverFilterDateChange_() {
+    appState.approverFilterDate = normalizeDateKey_(getFieldValue_('approverFilterDate'));
+    renderApproverSummary_();
+    renderApproverTable_();
+  }
+
+  function handleApproverFilterToday_() {
+    appState.approverFilterDate = getTodayIsoDate_();
+    setFieldValue_('approverFilterDate', appState.approverFilterDate);
+    renderApproverSummary_();
+    renderApproverTable_();
+    setStatusText_('Filter approval diatur ke hari ini');
+  }
+
+  function handleApproverFilterAll_() {
+    appState.approverFilterDate = '';
+    setFieldValue_('approverFilterDate', '');
+    renderApproverSummary_();
+    renderApproverTable_();
+    setStatusText_('Menampilkan semua approval');
   }
 
   function handleApproverPriceSearchInput_() {
     appState.approverPriceSearch = getFieldValue_('approver_price_search');
     renderApproverPriceTable_();
+  }
+
+  function handleApproverExportFilterDateChange_() {
+    appState.approverExportFilterDate = normalizeDateKey_(getFieldValue_('approverExportFilterDate'));
+    renderApproverExportSummary_();
+    renderApproverExportTable_();
+  }
+
+  function handleApproverExportFilterToday_() {
+    appState.approverExportFilterDate = getTodayIsoDate_();
+    setFieldValue_('approverExportFilterDate', appState.approverExportFilterDate);
+    renderApproverExportSummary_();
+    renderApproverExportTable_();
+    setStatusText_('Filter export Kledo diatur ke hari ini');
+  }
+
+  function handleApproverExportFilterAll_() {
+    appState.approverExportFilterDate = '';
+    setFieldValue_('approverExportFilterDate', '');
+    renderApproverExportSummary_();
+    renderApproverExportTable_();
+    setStatusText_('Menampilkan semua antrean export Kledo');
   }
 
   function saveProductBasePrice_(kodeItem) {
@@ -2235,6 +2310,8 @@
 
     appState.salesOrderItems = appState.salesOrderItems || [];
     appState.deliveryFilterDate = appState.deliveryFilterDate || iso;
+    appState.approverFilterDate = appState.approverFilterDate || iso;
+    appState.approverExportFilterDate = appState.approverExportFilterDate || iso;
     setFieldValue_('tanggal_kirim_rencana', iso);
     setFieldValue_('tanggal_jatuh_tempo', '');
     setFieldValue_('subtotal', formatCurrencyInput_(0));
@@ -2248,6 +2325,8 @@
     setFieldValue_('admin_total', formatCurrencyInput_(0));
     setFieldValue_('admin_line_subtotal', formatCurrencyInput_(0));
     setFieldValue_('deliveryFilterDate', appState.deliveryFilterDate);
+    setFieldValue_('approverFilterDate', appState.approverFilterDate);
+    setFieldValue_('approverExportFilterDate', appState.approverExportFilterDate);
     updateSalesNewCustomerRequirements_(getJenisCustomer_() === 'Baru');
   }
 
