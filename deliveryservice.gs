@@ -229,7 +229,7 @@ function generateKledoExportFile(noSo, currentUser) {
   var salesOrder = buildSalesOrderClientRow_(findSalesOrderByNoSo_(noSo) || {});
   var suratJalan = findSuratJalanByNoSo_(noSo) || {};
   var exportRows;
-  var csvLines;
+  var workbookBlob;
   var fileName;
 
   if (!salesOrder.no_so) {
@@ -245,20 +245,19 @@ function generateKledoExportFile(noSo, currentUser) {
   }
 
   exportRows = buildKledoExportRows_(salesOrder, suratJalan);
-  csvLines = [APP_CONFIG.KLEDO_EXPORT.HEADERS].concat(exportRows).map(function(row) {
-    return row.map(escapeCsvCell_).join(',');
-  });
+  workbookBlob = buildKledoExportWorkbook_([APP_CONFIG.KLEDO_EXPORT.HEADERS].concat(exportRows));
   fileName = [
     APP_CONFIG.KLEDO_EXPORT.FILE_PREFIX,
     String(salesOrder.no_so || '').replace(/[^A-Za-z0-9_-]/g, '_'),
     Utilities.formatDate(new Date(), APP_CONFIG.TIMEZONE, 'yyyyMMdd-HHmmss')
-  ].join('-') + '.csv';
+  ].join('-') + '.xlsx';
 
   return {
     success: true,
     no_so: salesOrder.no_so,
     file_name: fileName,
-    csv_content: csvLines.join('\r\n')
+    mime_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    file_content_base64: Utilities.base64Encode(workbookBlob.getBytes())
   };
 }
 
@@ -361,9 +360,35 @@ function formatKledoDate_(value) {
   return [match[3], match[2], match[1]].join('/');
 }
 
-function escapeCsvCell_(value) {
-  var text = String(value === undefined || value === null ? '' : value);
-  return '"' + text.replace(/"/g, '""') + '"';
+function buildKledoExportWorkbook_(rows) {
+  var spreadsheet = SpreadsheetApp.create('TEMP KLEDO EXPORT');
+  var sheet = spreadsheet.getSheets()[0];
+  var file = DriveApp.getFileById(spreadsheet.getId());
+  var exportUrl = 'https://docs.google.com/spreadsheets/d/' + spreadsheet.getId() + '/export?format=xlsx';
+  var response;
+  var blob;
+
+  try {
+    sheet.setName('Kledo Import');
+
+    if (Array.isArray(rows) && rows.length) {
+      sheet.getRange(1, 1, rows.length, rows[0].length).setValues(rows);
+      sheet.setFrozenRows(1);
+    }
+
+    response = UrlFetchApp.fetch(exportUrl, {
+      headers: {
+        Authorization: 'Bearer ' + ScriptApp.getOAuthToken()
+      },
+      muteHttpExceptions: false
+    });
+
+    blob = response.getBlob();
+    blob.setName('kledo-export.xlsx');
+    return blob;
+  } finally {
+    file.setTrashed(true);
+  }
 }
 
 function testCreateSuratJalanFromLatestReadyOrder() {
