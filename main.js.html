@@ -17,7 +17,8 @@
     deliveryFilterDate: '',
     tomorrowOrders: [],
     tomorrowPlanDate: '',
-    sessionUserId: ''
+    sessionUserId: '',
+    currentDeliveryVerificationNoSo: ''
   };
   var APP_USER_STORAGE_KEY = 'airtis_sales_user_id';
 
@@ -97,11 +98,19 @@
     document.getElementById('agentOrderForm').addEventListener('submit', submitAgentOrderForm_);
     document.getElementById('openAgentModalBtn').addEventListener('click', openAgentModal_);
     document.getElementById('closeAgentModalBtn').addEventListener('click', closeAgentModal_);
+    document.getElementById('closeDeliveryVerificationBtn').addEventListener('click', closeDeliveryVerificationModal_);
+    document.getElementById('cancelDeliveryVerificationBtn').addEventListener('click', closeDeliveryVerificationModal_);
+    document.getElementById('saveDeliveryVerificationBtn').addEventListener('click', saveDeliveryVerification_);
     document.getElementById('generateTomorrowPlanBtn').addEventListener('click', handleGenerateTomorrowPlan_);
     document.getElementById('copyTomorrowPlanBtn').addEventListener('click', handleCopyTomorrowPlan_);
     document.getElementById('agentModalBackdrop').addEventListener('click', function(event) {
       if (event.target.id === 'agentModalBackdrop') {
         closeAgentModal_();
+      }
+    });
+    document.getElementById('deliveryVerificationBackdrop').addEventListener('click', function(event) {
+      if (event.target.id === 'deliveryVerificationBackdrop') {
+        closeDeliveryVerificationModal_();
       }
     });
   }
@@ -676,13 +685,18 @@
     tbody.innerHTML = filteredOrders.map(function(row) {
       var noSo = String(row.no_so || '');
       var actions = [];
+      var statusVerifikasi = String(row.status_verifikasi_cs || 'Belum Dicek');
 
       if (String(row.status_kirim || '') === 'Siap Kirim') {
         actions.push('<button type="button" class="approve-btn" onclick="handleMarkDelivered(\'' + escapeJs_(noSo) + '\')">Terkirim</button>');
       }
 
       if (String(row.status_kirim || '') === 'Terkirim') {
-        actions.push('<button type="button" class="ghost-btn" onclick="handleCompleteOrder(\'' + escapeJs_(noSo) + '\')">Selesai</button>');
+        actions.push('<button type="button" class="ghost-btn" onclick="openDeliveryVerification(\'' + escapeJs_(noSo) + '\')">Verifikasi CS</button>');
+
+        if (statusVerifikasi === 'Sudah Dicek') {
+          actions.push('<button type="button" class="ghost-btn" onclick="handleCompleteOrder(\'' + escapeJs_(noSo) + '\')">Selesai</button>');
+        }
       }
 
       actions.push('<button type="button" class="ghost-btn" onclick="handlePrintSuratJalan(\'' + escapeJs_(noSo) + '\')">Print</button>');
@@ -693,7 +707,7 @@
           '<td>' + escapeHtml_(formatShortDateId_(row.tanggal_kirim || row.tanggal_cetak || '')) + '</td>' +
           '<td>' + escapeHtml_(noSo) + '</td>' +
           '<td>' + escapeHtml_(row.nama_customer) + '</td>' +
-          '<td>' + buildStatusBadge_(row.status_kirim) + '</td>' +
+          '<td>' + buildDeliveryStatusCellHtml_(row) + '</td>' +
           '<td><div class="inline-actions">' + actions.join('') + '</div></td>' +
         '</tr>';
     }).join('');
@@ -757,6 +771,168 @@
     setFieldValue_('deliveryFilterDate', '');
     renderDeliveryTable_();
     setStatusText_('Menampilkan semua surat jalan');
+  }
+
+  function buildDeliveryStatusCellHtml_(row) {
+    var deliveryStatus = buildStatusBadge_(row.status_kirim);
+    var verificationStatus = String(row.status_verifikasi_cs || 'Belum Dicek').trim() || 'Belum Dicek';
+
+    return '' +
+      '<div class="approver-risk-cell">' +
+        '<div>' + deliveryStatus + '</div>' +
+        '<div class="approver-meta-line"><strong>CS:</strong> ' + escapeHtml_(verificationStatus) + '</div>' +
+      '</div>';
+  }
+
+  function getDeliveryOrderByNoSo_(noSo) {
+    return (appState.deliveryOrders || []).find(function(row) {
+      return String(row.no_so || '').trim() === String(noSo || '').trim();
+    }) || null;
+  }
+
+  function openDeliveryVerification(noSo) {
+    var order = getDeliveryOrderByNoSo_(noSo);
+
+    if (!order) {
+      renderResult_('Data surat jalan tidak ditemukan untuk diverifikasi.', true);
+      return;
+    }
+
+    appState.currentDeliveryVerificationNoSo = String(noSo || '').trim();
+    renderDeliveryVerificationModal_(order);
+    document.getElementById('deliveryVerificationBackdrop').classList.remove('hidden');
+  }
+
+  function renderDeliveryVerificationModal_(order) {
+    var tbody = document.getElementById('deliveryVerificationTableBody');
+    var details = Array.isArray(order && order.details) ? order.details : [];
+
+    setText_('verificationNoSo', order.no_so || '-');
+    setText_('verificationNoSj', order.no_surat_jalan || '-');
+    setText_('verificationCustomer', order.nama_customer || order.nama_customer_input || '-');
+    setText_('verificationStatus', order.status_verifikasi_cs || 'Belum Dicek');
+    setFieldValue_('verificationNote', order.catatan_verifikasi_cs || '');
+
+    if (!tbody) {
+      return;
+    }
+
+    if (!details.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-cell">Belum ada item untuk diverifikasi.</td></tr>';
+      updateDeliveryVerificationTotals_();
+      return;
+    }
+
+    tbody.innerHTML = details.map(function(detail, index) {
+      var qtyTerkirim = Number(detail.qty_terkirim || detail.qty || 0);
+      var hargaFinal = Number(detail.harga_final || detail.harga || 0);
+      var diskonFinal = Number(detail.diskon_final || detail.diskon || 0);
+      var subtotalFinal = Number(detail.subtotal_final || detail.subtotal || 0);
+
+      return '' +
+        '<tr>' +
+          '<td><div class="sales-item-meta">' +
+            '<strong>' + escapeHtml_(detail.nama_item || '-') + '</strong>' +
+            '<small>' + escapeHtml_(detail.satuan || '-') + '</small>' +
+          '</div></td>' +
+          '<td>' + escapeHtml_(formatNumber_(detail.qty || 0)) + '</td>' +
+          '<td><input id="verify-qty-' + index + '" type="number" min="0" step="1" value="' + escapeHtml_(String(qtyTerkirim)) + '" oninput="handleVerificationLineInput_(' + index + ')" /></td>' +
+          '<td>' + escapeHtml_(formatCurrencyInput_(detail.harga || 0)) + '</td>' +
+          '<td><input id="verify-harga-' + index + '" type="number" min="0" step="1" value="' + escapeHtml_(String(hargaFinal)) + '" oninput="handleVerificationLineInput_(' + index + ')" /></td>' +
+          '<td><input id="verify-diskon-' + index + '" type="number" min="0" step="1" value="' + escapeHtml_(String(diskonFinal)) + '" oninput="handleVerificationLineInput_(' + index + ')" /></td>' +
+          '<td><input id="verify-subtotal-' + index + '" type="text" readonly value="' + escapeHtml_(formatCurrencyInput_(subtotalFinal)) + '" /></td>' +
+        '</tr>';
+    }).join('');
+
+    updateDeliveryVerificationTotals_();
+  }
+
+  function handleVerificationLineInput_(index) {
+    var qty = Number(getFieldValue_('verify-qty-' + index) || 0);
+    var harga = Number(getFieldValue_('verify-harga-' + index) || 0);
+    var diskon = Number(getFieldValue_('verify-diskon-' + index) || 0);
+    var subtotal = (qty * harga) - diskon;
+
+    setFieldValue_('verify-subtotal-' + index, formatCurrencyInput_(subtotal > 0 ? subtotal : 0));
+    updateDeliveryVerificationTotals_();
+  }
+
+  function updateDeliveryVerificationTotals_() {
+    var order = getDeliveryOrderByNoSo_(appState.currentDeliveryVerificationNoSo);
+    var details = Array.isArray(order && order.details) ? order.details : [];
+    var totals = details.reduce(function(result, _, index) {
+      var qty = Number(getFieldValue_('verify-qty-' + index) || 0);
+      var harga = Number(getFieldValue_('verify-harga-' + index) || 0);
+      var diskon = Number(getFieldValue_('verify-diskon-' + index) || 0);
+      var subtotal = Math.max((qty * harga) - diskon, 0);
+
+      result.subtotal += qty * harga;
+      result.diskon += diskon;
+      result.total += subtotal;
+      return result;
+    }, {
+      subtotal: 0,
+      diskon: 0,
+      total: 0
+    });
+
+    setFieldValue_('verificationSubtotalFinal', formatCurrencyInput_(totals.subtotal));
+    setFieldValue_('verificationDiskonFinal', formatCurrencyInput_(totals.diskon));
+    setFieldValue_('verificationTotalFinal', formatCurrencyInput_(totals.total));
+  }
+
+  function collectDeliveryVerificationPayload_() {
+    var order = getDeliveryOrderByNoSo_(appState.currentDeliveryVerificationNoSo);
+    var details = Array.isArray(order && order.details) ? order.details : [];
+    var items = details.map(function(detail, index) {
+      var qtyTerkirim = Number(getFieldValue_('verify-qty-' + index) || 0);
+      var hargaFinal = Number(getFieldValue_('verify-harga-' + index) || 0);
+      var diskonFinal = Number(getFieldValue_('verify-diskon-' + index) || 0);
+      var subtotalFinal = Math.max((qtyTerkirim * hargaFinal) - diskonFinal, 0);
+
+      return {
+        detail_id: detail.detail_id || '',
+        qty_terkirim: qtyTerkirim,
+        harga_final: hargaFinal,
+        diskon_final: diskonFinal,
+        subtotal_final: subtotalFinal
+      };
+    });
+
+    return {
+      no_so: appState.currentDeliveryVerificationNoSo,
+      items: items,
+      catatan_verifikasi_cs: getFieldValue_('verificationNote')
+    };
+  }
+
+  function saveDeliveryVerification_() {
+    var payload = collectDeliveryVerificationPayload_();
+
+    if (!payload.no_so) {
+      renderResult_('Pilih surat jalan yang ingin diverifikasi dulu.', true);
+      return;
+    }
+
+    setStatusText_('Menyimpan verifikasi CS...');
+
+    google.script.run
+      .withSuccessHandler(function(result) {
+        setStatusText_('Verifikasi CS berhasil disimpan');
+        renderResult_('Verifikasi CS untuk order ' + result.no_so + ' berhasil disimpan. Tombol Selesai sekarang aktif.', false);
+        closeDeliveryVerificationModal_();
+        loadAdminData_();
+      })
+      .withFailureHandler(function(error) {
+        setStatusText_('Gagal simpan verifikasi CS');
+        renderResult_('Gagal simpan verifikasi CS: ' + error.message, true);
+      })
+      .verifyDeliveredOrderFromDashboard(appState.currentUser.user_id, payload);
+  }
+
+  function closeDeliveryVerificationModal_() {
+    appState.currentDeliveryVerificationNoSo = '';
+    document.getElementById('deliveryVerificationBackdrop').classList.add('hidden');
   }
 
   function renderAdminSummary_() {

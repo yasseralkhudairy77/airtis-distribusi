@@ -63,7 +63,16 @@ function getSuratJalanPrintData(noSo) {
     alamat_kirim: suratJalan.alamat_kirim || salesOrder.alamat_kirim || '',
     item: suratJalan.item || orderDisplay.item_summary || salesOrder.item || '',
     qty: suratJalan.qty || orderDisplay.qty_summary || salesOrder.qty || '',
-    items: orderDisplay.details || [],
+    items: (orderDisplay.details || []).map(function(detail) {
+      return {
+        nama_item: detail.nama_item || '',
+        qty: Number(detail.qty_terkirim || detail.qty || 0),
+        satuan: detail.satuan || '',
+        harga: Number(detail.harga_final || detail.harga || 0),
+        diskon: Number(detail.diskon_final || detail.diskon || 0),
+        subtotal: Number(detail.subtotal_final || detail.subtotal || 0)
+      };
+    }),
     driver: suratJalan.driver || '',
     armada: suratJalan.armada || '',
     status_kirim: suratJalan.status_kirim || '',
@@ -72,9 +81,9 @@ function getSuratJalanPrintData(noSo) {
     pic_customer: salesOrder.pic_customer || '',
     no_hp_customer: salesOrder.no_hp_customer || '',
     term_pembayaran: salesOrder.term_pembayaran || '',
-    subtotal: orderDisplay.subtotal_order || salesOrder.subtotal || '',
-    diskon: orderDisplay.diskon_order || salesOrder.diskon || '',
-    total: orderDisplay.total_order || salesOrder.total || '',
+    subtotal: orderDisplay.subtotal_final || salesOrder.subtotal_final || salesOrder.subtotal || '',
+    diskon: orderDisplay.diskon_final || salesOrder.diskon_final || salesOrder.diskon || '',
+    total: orderDisplay.total_final || salesOrder.total_final || salesOrder.total || '',
     catatan_order: salesOrder.catatan || ''
   };
 }
@@ -83,7 +92,128 @@ function markOrderDelivered(noSo, userId, catatanKirim) {
   return updateDeliveryOrderStatus_(noSo, userId, 'Terkirim', 'Terkirim', catatanKirim);
 }
 
+function verifyDeliveredOrder(noSo, userId, payload) {
+  var suratJalan = findSuratJalanByNoSo_(noSo);
+  var salesOrder = findSalesOrderByNoSo_(noSo);
+  var verificationPayload = payload || {};
+  var submittedItems = Array.isArray(verificationPayload.items) ? verificationPayload.items : [];
+  var orderDetails;
+  var detailMap = {};
+  var totals;
+  var now;
+
+  if (!suratJalan) {
+    throw new Error('Surat jalan tidak ditemukan untuk no_so: ' + noSo);
+  }
+
+  if (!salesOrder) {
+    throw new Error('Sales order tidak ditemukan untuk no_so: ' + noSo);
+  }
+
+  if (normalizeText_(suratJalan.status_kirim) !== 'terkirim') {
+    throw new Error('Verifikasi CS hanya bisa dilakukan untuk surat jalan berstatus Terkirim.');
+  }
+
+  ensureSheetHeadersContain_(APP_CONFIG.SHEETS.SALES_ORDER, APP_CONFIG.HEADERS.SALES_ORDER);
+  ensureSheetHeadersContain_(APP_CONFIG.SHEETS.SALES_ORDER_DETAIL, APP_CONFIG.HEADERS.SALES_ORDER_DETAIL);
+
+  orderDetails = getSalesOrderDetailsByNoSo_(noSo);
+
+  if (!orderDetails.length) {
+    throw new Error('Detail order tidak ditemukan. Verifikasi CS membutuhkan detail item.');
+  }
+
+  orderDetails.forEach(function(detail) {
+    detailMap[String(detail.detail_id || '').trim()] = detail;
+  });
+
+  totals = submittedItems.reduce(function(result, item, index) {
+    var detailId = String(item.detail_id || '').trim();
+    var sourceDetail = detailMap[detailId];
+    var qtyTerkirim;
+    var hargaFinal;
+    var diskonFinal;
+    var subtotalFinal;
+
+    if (!detailId || !sourceDetail) {
+      throw new Error('Baris verifikasi ke-' + (index + 1) + ' tidak cocok dengan detail order.');
+    }
+
+    qtyTerkirim = Number(item.qty_terkirim || 0);
+    hargaFinal = Number(item.harga_final || 0);
+    diskonFinal = Number(item.diskon_final || 0);
+    subtotalFinal = Number(item.subtotal_final);
+
+    if (qtyTerkirim < 0) {
+      throw new Error('Qty terkirim untuk item ' + sourceDetail.nama_item + ' tidak boleh negatif.');
+    }
+
+    if (hargaFinal < 0) {
+      throw new Error('Harga final untuk item ' + sourceDetail.nama_item + ' tidak boleh negatif.');
+    }
+
+    if (diskonFinal < 0) {
+      throw new Error('Diskon final untuk item ' + sourceDetail.nama_item + ' tidak boleh negatif.');
+    }
+
+    if (isNaN(subtotalFinal)) {
+      subtotalFinal = (qtyTerkirim * hargaFinal) - diskonFinal;
+    }
+
+    if (subtotalFinal < 0) {
+      throw new Error('Subtotal final untuk item ' + sourceDetail.nama_item + ' tidak valid.');
+    }
+
+    updateRowByKey_(APP_CONFIG.SHEETS.SALES_ORDER_DETAIL, 'detail_id', detailId, {
+      qty_terkirim: qtyTerkirim,
+      harga_final: hargaFinal,
+      diskon_final: diskonFinal,
+      subtotal_final: subtotalFinal
+    });
+
+    result.subtotal += qtyTerkirim * hargaFinal;
+    result.diskon += diskonFinal;
+    result.total += subtotalFinal;
+    return result;
+  }, {
+    subtotal: 0,
+    diskon: 0,
+    total: 0
+  });
+
+  now = getNowParts_();
+
+  updateRowByKey_(APP_CONFIG.SHEETS.SALES_ORDER, 'no_so', noSo, {
+    subtotal_final: totals.subtotal,
+    diskon_final: totals.diskon,
+    total_final: totals.total,
+    status_verifikasi_cs: 'Sudah Dicek',
+    diverifikasi_oleh: userId,
+    tanggal_verifikasi_cs: now.tanggal + ' ' + now.jam,
+    catatan_verifikasi_cs: verificationPayload.catatan_verifikasi_cs || ''
+  });
+
+  return {
+    success: true,
+    no_so: noSo,
+    status_verifikasi_cs: 'Sudah Dicek',
+    subtotal_final: totals.subtotal,
+    diskon_final: totals.diskon,
+    total_final: totals.total
+  };
+}
+
 function completeOrder(noSo, userId, catatanKirim) {
+  var salesOrder = findSalesOrderByNoSo_(noSo);
+
+  if (!salesOrder) {
+    throw new Error('Sales order tidak ditemukan untuk no_so: ' + noSo);
+  }
+
+  if (String(salesOrder.status_verifikasi_cs || '').trim() !== 'Sudah Dicek') {
+    throw new Error('Order belum bisa selesai. CS wajib simpan verifikasi qty dan nominal final terlebih dahulu.');
+  }
+
   return updateDeliveryOrderStatus_(noSo, userId, 'Selesai', 'Selesai', catatanKirim);
 }
 

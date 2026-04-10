@@ -397,6 +397,18 @@ function createDummyTransactions_() {
   });
 
   markOrderDelivered(orderKirim.no_so, 'U020', 'Dummy barang terkirim');
+  verifyDeliveredOrder(orderKirim.no_so, 'U020', {
+    items: getSalesOrderDetailsByNoSo_(orderKirim.no_so).map(function(detail) {
+      return {
+        detail_id: detail.detail_id,
+        qty_terkirim: Number(detail.qty || 0),
+        harga_final: Number(detail.harga || 0),
+        diskon_final: Number(detail.diskon || 0),
+        subtotal_final: Number(detail.subtotal || 0)
+      };
+    }),
+    catatan_verifikasi_cs: 'Dummy verifikasi CS selesai'
+  });
   completeOrder(orderKirim.no_so, 'U020', 'Dummy order selesai');
 
   return {

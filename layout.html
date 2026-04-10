@@ -676,6 +676,69 @@
       </section>
     </div>
 
+    <div class="modal-backdrop hidden" id="deliveryVerificationBackdrop">
+      <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="deliveryVerificationTitle">
+        <div class="panel-header">
+          <div>
+            <h2 id="deliveryVerificationTitle">Verifikasi CS</h2>
+            <p class="panel-subtitle">CS cek qty terkirim dan nominal final sebelum order boleh diselesaikan.</p>
+          </div>
+          <button type="button" class="ghost-btn" id="closeDeliveryVerificationBtn">Tutup</button>
+        </div>
+
+        <div class="customer-info">
+          <div><strong>No SO:</strong> <span id="verificationNoSo">-</span></div>
+          <div><strong>No SJ:</strong> <span id="verificationNoSj">-</span></div>
+          <div><strong>Customer:</strong> <span id="verificationCustomer">-</span></div>
+          <div><strong>Status Verifikasi:</strong> <span id="verificationStatus">Belum Dicek</span></div>
+        </div>
+
+        <div class="table-wrap" style="margin-top:16px;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Produk</th>
+                <th>Qty Order</th>
+                <th>Qty Terkirim</th>
+                <th>Harga Order</th>
+                <th>Harga Final</th>
+                <th>Diskon Final</th>
+                <th>Subtotal Final</th>
+              </tr>
+            </thead>
+            <tbody id="deliveryVerificationTableBody">
+              <tr><td colspan="7" class="empty-cell">Belum ada item untuk diverifikasi.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="form-grid sales-order-total-grid" style="margin-top:16px;">
+          <label class="field">
+            <span>Subtotal Final</span>
+            <input id="verificationSubtotalFinal" type="text" readonly />
+          </label>
+          <label class="field">
+            <span>Total Diskon Final</span>
+            <input id="verificationDiskonFinal" type="text" readonly />
+          </label>
+          <label class="field">
+            <span>Total Final</span>
+            <input id="verificationTotalFinal" type="text" readonly />
+          </label>
+        </div>
+
+        <label class="field" style="margin-top:16px;">
+          <span>Catatan Verifikasi CS</span>
+          <textarea id="verificationNote" rows="3" placeholder="Catatan koreksi qty, selisih rupiah, retur, atau alasan perubahan"></textarea>
+        </label>
+
+        <div class="action-row" style="margin-top:16px;">
+          <button type="button" class="ghost-btn" id="cancelDeliveryVerificationBtn">Batal</button>
+          <button type="button" class="primary-btn" id="saveDeliveryVerificationBtn">Simpan Verifikasi CS</button>
+        </div>
+      </section>
+    </div>
+
     <?!= include('main.js'); ?>
   </body>
 </html>

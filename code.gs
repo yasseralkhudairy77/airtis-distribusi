@@ -144,6 +144,13 @@ function getAdminDashboardData(userId) {
       result.item_summary = order.item_summary || '';
       result.qty_summary = order.qty_summary || '';
       result.details = order.details || [];
+      result.subtotal_final = order.subtotal_final || 0;
+      result.diskon_final = order.diskon_final || 0;
+      result.total_final = order.total_final || 0;
+      result.status_verifikasi_cs = order.status_verifikasi_cs || 'Belum Dicek';
+      result.diverifikasi_oleh = order.diverifikasi_oleh || '';
+      result.tanggal_verifikasi_cs = order.tanggal_verifikasi_cs || '';
+      result.catatan_verifikasi_cs = order.catatan_verifikasi_cs || '';
 
       return result;
     })
@@ -234,6 +241,15 @@ function createSuratJalanFromDashboard(userId, formData) {
 function markOrderDeliveredFromDashboard(userId, formData) {
   var currentUser = requireCurrentUserRole_(['CS/Admin'], userId);
   return markOrderDelivered(formData.no_so, currentUser.user_id, formData.catatan_kirim || '');
+}
+
+function verifyDeliveredOrderFromDashboard(userId, formData) {
+  var currentUser = requireCurrentUserRole_(['CS/Admin'], userId);
+
+  return verifyDeliveredOrder(formData.no_so, currentUser.user_id, {
+    items: Array.isArray(formData.items) ? formData.items : [],
+    catatan_verifikasi_cs: formData.catatan_verifikasi_cs || ''
+  });
 }
 
 function completeOrderFromDashboard(userId, formData) {

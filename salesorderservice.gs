@@ -30,6 +30,9 @@ function submitSalesOrder(payload) {
     diskon: totals.diskon_order,
     subtotal: totals.subtotal_order,
     total: totals.total_order,
+    subtotal_final: totals.subtotal_order,
+    diskon_final: totals.diskon_order,
+    total_final: totals.total_order,
     term_pembayaran: payload.term_pembayaran,
     tanggal_jatuh_tempo: payload.tanggal_jatuh_tempo,
     status_pembayaran_customer: customerCheck.status_pembayaran_customer,
@@ -37,6 +40,10 @@ function submitSalesOrder(payload) {
     jumlah_nota_overdue: customerCheck.jumlah_nota_overdue,
     tanggal_jatuh_tempo_terdekat: customerCheck.tanggal_jatuh_tempo_terdekat,
     catatan_piutang: customerCheck.catatan_piutang,
+    status_verifikasi_cs: 'Belum Dicek',
+    diverifikasi_oleh: '',
+    tanggal_verifikasi_cs: '',
+    catatan_verifikasi_cs: '',
     status_order: approvalDecision.status_order,
     prioritas_kirim: prioritasKirim,
     tanggal_kirim_rencana: payload.tanggal_kirim_rencana,
@@ -328,7 +335,11 @@ function writeSalesOrderDetails_(noSo, items) {
       satuan: item.satuan,
       harga: item.harga,
       diskon: item.diskon,
-      subtotal: item.subtotal
+      subtotal: item.subtotal,
+      qty_terkirim: item.qty,
+      harga_final: item.harga,
+      diskon_final: item.diskon,
+      subtotal_final: item.subtotal
     });
   });
 }
@@ -358,10 +369,14 @@ function getSalesOrderDetailsForDisplay_(order) {
         kode_item: detail.kode_item || '',
         nama_item: detail.nama_item || '',
         qty: Number(detail.qty || 0),
+        qty_terkirim: Number(detail.qty_terkirim || detail.qty || 0),
         satuan: detail.satuan || '',
         harga: Number(detail.harga || 0),
+        harga_final: Number(detail.harga_final || detail.harga || 0),
         diskon: Number(detail.diskon || 0),
-        subtotal: Number(detail.subtotal || 0)
+        diskon_final: Number(detail.diskon_final || detail.diskon || 0),
+        subtotal: Number(detail.subtotal || 0),
+        subtotal_final: Number(detail.subtotal_final || detail.subtotal || 0)
       };
     });
   }
@@ -380,10 +395,14 @@ function getSalesOrderDetailsForDisplay_(order) {
     kode_item: '',
     nama_item: String(order.item || '').trim(),
     qty: Number(order.qty || 0),
+    qty_terkirim: Number(order.qty || 0),
     satuan: getProductUnitByNameServer_(order.item),
     harga: Number(order.harga || 0),
+    harga_final: Number(order.harga || 0),
     diskon: Number(order.diskon || 0),
-    subtotal: Number(order.total || order.subtotal || 0)
+    diskon_final: Number(order.diskon || 0),
+    subtotal: Number(order.total || order.subtotal || 0),
+    subtotal_final: Number(order.total || order.subtotal || 0)
   }];
 }
 
@@ -391,6 +410,16 @@ function buildSalesOrderClientRow_(order) {
   var source = order || {};
   var details = getSalesOrderDetailsForDisplay_(source);
   var totals = calculateOrderTotals_(details);
+  var finalTotals = details.reduce(function(result, detail) {
+    result.subtotal_order += Number(detail.qty_terkirim || 0) * Number(detail.harga_final || 0);
+    result.diskon_order += Number(detail.diskon_final || 0);
+    result.total_order += Number(detail.subtotal_final || 0);
+    return result;
+  }, {
+    subtotal_order: 0,
+    diskon_order: 0,
+    total_order: 0
+  });
 
   return Object.keys(source).reduce(function(result, key) {
     result[key] = source[key];
@@ -402,7 +431,14 @@ function buildSalesOrderClientRow_(order) {
     jumlah_item: details.length,
     subtotal_order: Number(source.subtotal || totals.subtotal_order || 0),
     diskon_order: Number(source.diskon || totals.diskon_order || 0),
-    total_order: Number(source.total || totals.total_order || 0)
+    total_order: Number(source.total || totals.total_order || 0),
+    subtotal_final: Number(source.subtotal_final || finalTotals.subtotal_order || 0),
+    diskon_final: Number(source.diskon_final || finalTotals.diskon_order || 0),
+    total_final: Number(source.total_final || finalTotals.total_order || 0),
+    status_verifikasi_cs: String(source.status_verifikasi_cs || 'Belum Dicek').trim() || 'Belum Dicek',
+    diverifikasi_oleh: source.diverifikasi_oleh || '',
+    tanggal_verifikasi_cs: source.tanggal_verifikasi_cs || '',
+    catatan_verifikasi_cs: source.catatan_verifikasi_cs || ''
   });
 }
 

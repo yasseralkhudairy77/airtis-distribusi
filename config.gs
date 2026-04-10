@@ -105,6 +105,9 @@ var APP_CONFIG = {
       'diskon',
       'subtotal',
       'total',
+      'subtotal_final',
+      'diskon_final',
+      'total_final',
       'term_pembayaran',
       'tanggal_jatuh_tempo',
       'status_pembayaran_customer',
@@ -112,6 +115,10 @@ var APP_CONFIG = {
       'jumlah_nota_overdue',
       'tanggal_jatuh_tempo_terdekat',
       'catatan_piutang',
+      'status_verifikasi_cs',
+      'diverifikasi_oleh',
+      'tanggal_verifikasi_cs',
+      'catatan_verifikasi_cs',
       'status_order',
       'prioritas_kirim',
       'tanggal_kirim_rencana',
@@ -129,7 +136,11 @@ var APP_CONFIG = {
       'satuan',
       'harga',
       'diskon',
-      'subtotal'
+      'subtotal',
+      'qty_terkirim',
+      'harga_final',
+      'diskon_final',
+      'subtotal_final'
     ],
     APPROVAL_ORDER: [
       'approval_id',
