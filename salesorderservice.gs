@@ -31,6 +31,7 @@ function submitSalesOrder(payload) {
     subtotal: totals.subtotal_order,
     total: totals.total_order,
     term_pembayaran: payload.term_pembayaran,
+    tanggal_jatuh_tempo: payload.tanggal_jatuh_tempo,
     status_pembayaran_customer: customerCheck.status_pembayaran_customer,
     total_tunggakan: customerCheck.total_tunggakan,
     jumlah_nota_overdue: customerCheck.jumlah_nota_overdue,
@@ -44,6 +45,7 @@ function submitSalesOrder(payload) {
     alasan_hold: approvalDecision.alasan_hold
   };
 
+  ensureSheetHeadersContain_(APP_CONFIG.SHEETS.SALES_ORDER, APP_CONFIG.HEADERS.SALES_ORDER);
   appendRowByHeaders_(APP_CONFIG.SHEETS.SALES_ORDER, salesOrderRow);
   writeSalesOrderDetails_(noSo, items);
   logStatusOrder_(noSo, '', salesOrderRow.status_order, payload.sales_id, salesOrderRow.alasan_hold);
@@ -58,6 +60,7 @@ function submitSalesOrder(payload) {
     customer_id: salesOrderRow.customer_id,
     jumlah_item: items.length,
     status_order: salesOrderRow.status_order,
+    tanggal_jatuh_tempo: salesOrderRow.tanggal_jatuh_tempo || '',
     butuh_persetujuan: salesOrderRow.butuh_persetujuan,
     alasan_hold: salesOrderRow.alasan_hold
   };
@@ -82,6 +85,7 @@ function testSubmitSalesOrderAman() {
     subtotal: 180000,
     total: 180000,
     term_pembayaran: 'Cash',
+    tanggal_jatuh_tempo: Utilities.formatDate(new Date(), APP_CONFIG.TIMEZONE, 'yyyy-MM-dd'),
     tanggal_kirim_rencana: Utilities.formatDate(new Date(), APP_CONFIG.TIMEZONE, 'yyyy-MM-dd'),
     catatan: 'Test order customer lancar'
   });
@@ -108,6 +112,7 @@ function testSubmitSalesOrderHold() {
     subtotal: 360000,
     total: 360000,
     term_pembayaran: 'Tempo 7 Hari',
+    tanggal_jatuh_tempo: Utilities.formatDate(new Date(), APP_CONFIG.TIMEZONE, 'yyyy-MM-dd'),
     tanggal_kirim_rencana: Utilities.formatDate(new Date(), APP_CONFIG.TIMEZONE, 'yyyy-MM-dd'),
     catatan: 'Test order customer menunggak'
   });
@@ -124,6 +129,7 @@ function validateSalesOrderPayload_(payload) {
     'pic_customer',
     'no_hp_customer',
     'term_pembayaran',
+    'tanggal_jatuh_tempo',
     'tanggal_kirim_rencana'
   ];
 

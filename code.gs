@@ -185,6 +185,7 @@ function submitSalesOrderFromForm(userId, formData) {
     subtotal: Number(formData.subtotal || 0),
     total: Number(formData.total || 0),
     term_pembayaran: formData.term_pembayaran,
+    tanggal_jatuh_tempo: formData.tanggal_jatuh_tempo,
     tanggal_kirim_rencana: formData.tanggal_kirim_rencana,
     catatan: formData.catatan
   };
@@ -265,6 +266,7 @@ function submitAgentOrderFromAdmin(userId, formData) {
     subtotal: Number(formData.subtotal || 0),
     total: Number(formData.total || 0),
     term_pembayaran: formData.term_pembayaran,
+    tanggal_jatuh_tempo: formData.tanggal_jatuh_tempo,
     tanggal_kirim_rencana: formData.tanggal_kirim_rencana,
     catatan: catatanGabungan
   });

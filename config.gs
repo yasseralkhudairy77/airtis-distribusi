@@ -106,6 +106,7 @@ var APP_CONFIG = {
       'subtotal',
       'total',
       'term_pembayaran',
+      'tanggal_jatuh_tempo',
       'status_pembayaran_customer',
       'total_tunggakan',
       'jumlah_nota_overdue',

@@ -1580,6 +1580,7 @@
       subtotal: parseCurrencyInput_(getFieldValue_('subtotal')),
       total: parseCurrencyInput_(getFieldValue_('total')),
       term_pembayaran: getFieldValue_('term_pembayaran'),
+      tanggal_jatuh_tempo: getFieldValue_('tanggal_jatuh_tempo'),
       tanggal_kirim_rencana: getFieldValue_('tanggal_kirim_rencana'),
       catatan: getFieldValue_('catatan')
     };
@@ -1616,6 +1617,7 @@
       subtotal: parseCurrencyInput_(getFieldValue_('admin_subtotal')),
       total: parseCurrencyInput_(getFieldValue_('admin_total')),
       term_pembayaran: getFieldValue_('admin_term_pembayaran'),
+      tanggal_jatuh_tempo: getFieldValue_('admin_tanggal_jatuh_tempo'),
       tanggal_kirim_rencana: getFieldValue_('admin_tanggal_kirim_rencana'),
       catatan: getFieldValue_('admin_catatan')
     };
@@ -1633,6 +1635,10 @@
   function validateAgentFormPayload_(payload) {
     if (!Array.isArray(payload.items) || !payload.items.length) {
       return 'Minimal satu item order agen wajib ditambahkan.';
+    }
+
+    if (!String(payload.tanggal_jatuh_tempo || '').trim()) {
+      return 'Tanggal Jatuh Tempo wajib diisi.';
     }
 
     if (String(payload.jenis_customer || '') !== 'Baru') {
@@ -1665,6 +1671,10 @@
       return 'Minimal satu item order wajib ditambahkan.';
     }
 
+    if (!String(payload.tanggal_jatuh_tempo || '').trim()) {
+      return 'Tanggal Jatuh Tempo wajib diisi.';
+    }
+
     if (String(payload.jenis_customer || '') !== 'Baru') {
       return '';
     }
@@ -1693,6 +1703,7 @@
       'ID Customer: ' + (result.customer_id || '-'),
       'Jumlah Item: ' + String(result.jumlah_item || 0),
       'Status Order: ' + result.status_order,
+      'Tanggal Jatuh Tempo: ' + (result.tanggal_jatuh_tempo || '-'),
       'Butuh Persetujuan: ' + result.butuh_persetujuan
     ];
 
@@ -1916,11 +1927,13 @@
     appState.salesOrderItems = appState.salesOrderItems || [];
     appState.deliveryFilterDate = appState.deliveryFilterDate || iso;
     setFieldValue_('tanggal_kirim_rencana', iso);
+    setFieldValue_('tanggal_jatuh_tempo', '');
     setFieldValue_('subtotal', formatCurrencyInput_(0));
     setFieldValue_('diskon_total', formatCurrencyInput_(0));
     setFieldValue_('total', formatCurrencyInput_(0));
     setFieldValue_('line_subtotal', formatCurrencyInput_(0));
     setFieldValue_('admin_tanggal_kirim_rencana', iso);
+    setFieldValue_('admin_tanggal_jatuh_tempo', '');
     setFieldValue_('admin_subtotal', formatCurrencyInput_(0));
     setFieldValue_('admin_diskon_total', formatCurrencyInput_(0));
     setFieldValue_('admin_total', formatCurrencyInput_(0));

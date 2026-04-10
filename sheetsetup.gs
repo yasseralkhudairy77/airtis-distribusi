@@ -288,6 +288,7 @@ function createDummyTransactions_() {
     subtotal: 255000,
     total: 250000,
     term_pembayaran: 'Cash',
+    tanggal_jatuh_tempo: today,
     tanggal_kirim_rencana: today,
     catatan: 'Dummy order lancar'
   });
@@ -312,6 +313,7 @@ function createDummyTransactions_() {
     subtotal: 600000,
     total: 575000,
     term_pembayaran: 'Tempo 14 Hari',
+    tanggal_jatuh_tempo: today,
     tanggal_kirim_rencana: today,
     catatan: 'Dummy order menunggak'
   });
@@ -336,6 +338,7 @@ function createDummyTransactions_() {
     subtotal: 550000,
     total: 550000,
     term_pembayaran: 'Tempo 30 Hari',
+    tanggal_jatuh_tempo: today,
     tanggal_kirim_rencana: today,
     catatan: '[AGEN/CS] Dummy order customer ditahan'
   });
@@ -372,6 +375,7 @@ function createDummyTransactions_() {
     subtotal: 491000,
     total: 486000,
     term_pembayaran: 'Cash',
+    tanggal_jatuh_tempo: today,
     tanggal_kirim_rencana: today,
     catatan: 'Dummy order siap dibuatkan SJ'
   });
