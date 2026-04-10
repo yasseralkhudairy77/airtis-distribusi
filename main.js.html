@@ -1849,6 +1849,10 @@
       return { validationMessage: 'Produk tidak ditemukan di master item.' };
     }
 
+    if (hargaDasar <= 0 && harga > 0) {
+      hargaDasar = harga;
+    }
+
     if (hargaDasar <= 0) {
       return { validationMessage: 'Harga dasar produk belum diinput approver. Hubungi approver untuk melengkapi harga dasar item.' };
     }
@@ -1905,6 +1909,10 @@
 
     if (!product) {
       return { validationMessage: 'Produk agen tidak ditemukan di master item.' };
+    }
+
+    if (hargaDasar <= 0 && harga > 0) {
+      hargaDasar = harga;
     }
 
     if (hargaDasar <= 0) {
