@@ -10,6 +10,7 @@
     adminOrderItems: [],
     approvals: [],
     approvers: [],
+    exportOrders: [],
     approverSearch: '',
     approverPriceSearch: '',
     readyOrders: [],
@@ -79,6 +80,7 @@
     document.getElementById('loginForm').addEventListener('submit', submitLoginForm_);
     document.getElementById('logoutBtn').addEventListener('click', handleLogout_);
     document.getElementById('refreshApproverBtn').addEventListener('click', loadApproverData_);
+    document.getElementById('refreshApproverExportBtn').addEventListener('click', loadApproverData_);
     document.getElementById('approver_search').addEventListener('input', handleApproverSearchInput_);
     document.getElementById('approver_price_search').addEventListener('input', handleApproverPriceSearchInput_);
     document.getElementById('refreshAdminBtn').addEventListener('click', loadAdminData_);
@@ -185,6 +187,7 @@
 
           appState.approvals = Array.isArray(payload.approvals) ? payload.approvals : [];
           appState.approvers = Array.isArray(payload.approvers) ? payload.approvers : [];
+          appState.exportOrders = Array.isArray(payload.exportOrders) ? payload.exportOrders : [];
           appState.products = Array.isArray(payload.products) ? payload.products : appState.products;
           appState.approverSearch = '';
           appState.approverPriceSearch = '';
@@ -194,6 +197,8 @@
           renderApproverPriceSummary_();
           renderApproverPriceTable_();
           renderApproverSummary_();
+          renderApproverExportSummary_();
+          renderApproverExportTable_();
           setFieldValue_('approver_search', '');
           setFieldValue_('approver_price_search', '');
           renderApproverTable_();
@@ -403,6 +408,84 @@
         Number(row.jumlah_nota_overdue || 0) > 0 ||
         String(row.tanggal_jatuh_tempo_terdekat || '').trim() !== '';
     }).length));
+  }
+
+  function renderApproverExportSummary_() {
+    var orders = appState.exportOrders || [];
+    var totalFinal = orders.reduce(function(result, row) {
+      return result + Number(row.total_final || 0);
+    }, 0);
+
+    setText_('summaryExportReady', String(orders.length || 0));
+    setText_('summaryExportOrders', String(orders.length || 0));
+    setText_('summaryExportTotal', 'Rp ' + formatNumber_(totalFinal));
+  }
+
+  function renderApproverExportTable_() {
+    var tbody = document.getElementById('approverExportTableBody');
+    var orders = appState.exportOrders || [];
+
+    if (!tbody) return;
+
+    if (!orders.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-cell">Belum ada order siap export Kledo.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = orders.map(function(row) {
+      var noSo = String(row.no_so || '');
+      var actions = [];
+
+      actions.push('<button type="button" class="approve-btn" onclick="handleDownloadKledoExport(\'' + escapeJs_(noSo) + '\')">Download CSV</button>');
+      actions.push('<button type="button" class="ghost-btn" onclick="handleMarkKledoExported(\'' + escapeJs_(noSo) + '\')">Sudah Upload</button>');
+
+      return '' +
+        '<tr>' +
+          '<td>' + escapeHtml_(noSo) + '</td>' +
+          '<td>' + buildApproverCustomerCellHtml_({
+            customer: row.customer,
+            sales_nama: row.sales_nama,
+            tanggal_pengajuan: row.tanggal_order
+          }) + '</td>' +
+          '<td>' + buildApproverExportOrderCellHtml_(row) + '</td>' +
+          '<td>' +
+            '<div class="approver-meta-line"><strong>Order:</strong> ' + escapeHtml_(formatShortDateId_(row.tanggal_order || '')) + '</div>' +
+            '<div class="approver-meta-line"><strong>JT:</strong> ' + escapeHtml_(formatShortDateId_(row.tanggal_jatuh_tempo || '')) + '</div>' +
+            '<div class="approver-meta-line"><strong>Kirim:</strong> ' + escapeHtml_(formatShortDateId_(row.tanggal_kirim || '')) + '</div>' +
+          '</td>' +
+          '<td>' + buildStatusBadge_(row.status_export_kledo || 'Siap Export') + '</td>' +
+          '<td><div class="approver-action-stack">' + actions.join('') + '</div></td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function buildApproverExportOrderCellHtml_(row) {
+    var details = Array.isArray(row && row.details) ? row.details : [];
+    var notes = [];
+
+    if (row.term_pembayaran) {
+      notes.push('<div class="approver-meta-line"><strong>Term:</strong> ' + escapeHtml_(row.term_pembayaran) + '</div>');
+    }
+
+    if (row.catatan_verifikasi_cs) {
+      notes.push('<div class="approver-meta-line"><strong>CS:</strong> ' + escapeHtml_(row.catatan_verifikasi_cs) + '</div>');
+    }
+
+    return '' +
+      '<div class="approver-order-cell">' +
+        '<div class="order-item-summary">' +
+          '<strong>' + escapeHtml_(row.item || '-') + '</strong>' +
+          '<div class="order-item-meta">Final: Rp ' + escapeHtml_(formatNumber_(row.total_final || 0)) + '</div>' +
+          buildOrderDetailPreviewHtml_(details.map(function(detail) {
+            return {
+              nama_item: detail.nama_item,
+              qty: detail.qty_terkirim || detail.qty,
+              satuan: detail.satuan
+            };
+          })) +
+        '</div>' +
+        '<div class="approver-meta">' + notes.join('') + '</div>' +
+      '</div>';
   }
 
   function renderApproverPriceSummary_() {
@@ -756,6 +839,43 @@
       .updateProductBasePriceFromApprover(appState.currentUser.user_id, {
         kode_item: kodeItem,
         harga_dasar: inputValue
+      });
+  }
+
+  function handleDownloadKledoExport(noSo) {
+    setStatusText_('Menyiapkan export Kledo...');
+
+    google.script.run
+      .withSuccessHandler(function(result) {
+        downloadTextFile_(result.file_name || ('kledo-' + noSo + '.csv'), result.csv_content || '', 'text/csv;charset=utf-8;');
+        setStatusText_('File Kledo berhasil dibuat');
+        renderResult_('File export Kledo untuk order ' + result.no_so + ' berhasil diunduh.', false);
+      })
+      .withFailureHandler(function(error) {
+        setStatusText_('Gagal membuat export Kledo');
+        renderResult_('Gagal membuat export Kledo: ' + error.message, true);
+      })
+      .generateKledoExportFromDashboard(appState.currentUser.user_id, {
+        no_so: noSo
+      });
+  }
+
+  function handleMarkKledoExported(noSo) {
+    setStatusText_('Menandai order sudah diupload ke Kledo...');
+
+    google.script.run
+      .withSuccessHandler(function(result) {
+        setStatusText_('Status export Kledo diperbarui');
+        renderResult_('Order ' + result.no_so + ' ditandai Sudah Export.', false);
+        loadApproverData_();
+      })
+      .withFailureHandler(function(error) {
+        setStatusText_('Gagal update status export');
+        renderResult_('Gagal update status export Kledo: ' + error.message, true);
+      })
+      .markKledoExportedFromDashboard(appState.currentUser.user_id, {
+        no_so: noSo,
+        catatan_export_kledo: 'Ditandai upload manual dari webapp approver'
       });
   }
 
@@ -2036,7 +2156,11 @@
   }
 
   function activateApproverView_(viewName) {
-    var targetView = viewName === 'pricing' ? 'pricing' : 'approval';
+    var targetView = 'approval';
+
+    if (viewName === 'pricing' || viewName === 'export') {
+      targetView = viewName;
+    }
 
     document.querySelectorAll('.approver-subtab-btn').forEach(function(button) {
       button.classList.toggle('active', button.dataset.approverView === targetView);
@@ -2540,13 +2664,15 @@
       className = 'warning';
     } else if (normalized === 'menunggak') {
       className = 'warning';
+    } else if (normalized === 'siap export') {
+      className = 'progress';
     } else if (normalized === 'ditahan' || normalized === 'ditolak') {
       className = 'danger';
     } else if (normalized === 'terkirim') {
       className = 'progress';
     } else if (normalized === 'selesai') {
       className = 'done';
-    } else if (normalized === 'disetujui' || normalized === 'lancar') {
+    } else if (normalized === 'disetujui' || normalized === 'lancar' || normalized === 'sudah export') {
       className = 'done';
     }
 
@@ -2723,6 +2849,19 @@
       document.body.removeChild(tempArea);
       onFailure(error);
     }
+  }
+
+  function downloadTextFile_(fileName, content, mimeType) {
+    var blob = new Blob([content || ''], { type: mimeType || 'text/plain;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+
+    link.href = url;
+    link.download = fileName || 'download.txt';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 
   function countDeliveryByStatus_(status) {

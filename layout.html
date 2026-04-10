@@ -251,6 +251,7 @@
         <section class="tab-panel hidden" id="tab-approver" data-role="approver">
           <div class="approver-subtabs" id="approverSubtabs">
             <button type="button" class="approver-subtab-btn active" data-approver-view="approval">Approval Order</button>
+            <button type="button" class="approver-subtab-btn" data-approver-view="export">Export Kledo</button>
             <button type="button" class="approver-subtab-btn" data-approver-view="pricing">Harga Dasar Item</button>
           </div>
 
@@ -306,6 +307,54 @@
                   </thead>
                   <tbody id="approverTableBody">
                     <tr><td colspan="5" class="empty-cell">Belum ada data approval.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </section>
+
+          <section class="approver-view-panel" id="approver-view-export">
+            <section class="form-card">
+              <div class="panel-header">
+                <div>
+                  <h2>Export Kledo</h2>
+                  <p class="panel-subtitle">Order yang sudah selesai dan sudah diverifikasi CS otomatis masuk antrean approver untuk export template import Kledo.</p>
+                </div>
+                <button type="button" class="ghost-btn" id="refreshApproverExportBtn">Refresh</button>
+              </div>
+
+              <div class="summary-grid approver-summary-grid">
+                <article class="summary-card">
+                  <span class="summary-label">Siap Export</span>
+                  <strong class="summary-value" id="summaryExportReady">0</strong>
+                  <span class="summary-note">Order selesai yang menunggu file export Kledo</span>
+                </article>
+                <article class="summary-card">
+                  <span class="summary-label">Total Nilai Final</span>
+                  <strong class="summary-value" id="summaryExportTotal">0</strong>
+                  <span class="summary-note">Akumulasi nilai final order yang siap masuk Kledo</span>
+                </article>
+                <article class="summary-card">
+                  <span class="summary-label">Order Final</span>
+                  <strong class="summary-value" id="summaryExportOrders">0</strong>
+                  <span class="summary-note">Jumlah order yang sudah lolos verifikasi CS</span>
+                </article>
+              </div>
+
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>No SO</th>
+                      <th>Customer</th>
+                      <th>Ringkasan Final</th>
+                      <th>Tanggal</th>
+                      <th>Status Export</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="approverExportTableBody">
+                    <tr><td colspan="6" class="empty-cell">Belum ada order siap export Kledo.</td></tr>
                   </tbody>
                 </table>
               </div>

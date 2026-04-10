@@ -27,6 +27,7 @@ var APP_CONFIG = {
   ],
   APPROVAL_STATUS: ['Menunggu', 'Disetujui', 'Ditolak'],
   DELIVERY_STATUS: ['Siap Kirim', 'Terkirim', 'Selesai'],
+  KLEDO_EXPORT_STATUS: ['Belum Siap', 'Siap Export', 'Sudah Export'],
   DELIVERY_PRIORITY: ['H-1 Wajib', 'Same Day Opsional', 'Jadwal Biasa'],
   CUSTOMER_TYPE: ['Lama', 'Baru'],
   PRINT: {
@@ -119,6 +120,10 @@ var APP_CONFIG = {
       'diverifikasi_oleh',
       'tanggal_verifikasi_cs',
       'catatan_verifikasi_cs',
+      'status_export_kledo',
+      'tanggal_export_kledo',
+      'diekspor_oleh',
+      'catatan_export_kledo',
       'status_order',
       'prioritas_kirim',
       'tanggal_kirim_rencana',
@@ -194,6 +199,44 @@ var APP_CONFIG = {
       'label',
       'urutan',
       'status_aktif'
+    ]
+  },
+  KLEDO_EXPORT: {
+    WAREHOUSE_NAME: 'Gudang Utama',
+    INCLUDE_TAX: 'Tidak',
+    FILE_PREFIX: 'kledo-sales-order',
+    HEADERS: [
+      '*Nama Kontak',
+      'Email',
+      'Alamat',
+      'Nomor Telepon',
+      'Email Sales Person',
+      '*Nomor Pesanan',
+      'Nomor Penawaran',
+      '*Tanggal Transaksi (dd/mm/yyyy)',
+      '*Tanggal Jatuh Tempo (dd/mm/yyyy)',
+      '*Nama / Kode Gudang',
+      'Catatan',
+      'Tanggal Pengiriman (dd/mm/yyyy)',
+      'Ekspedisi / Pengiriman Kurir',
+      'Nomor Resi Pengiriman',
+      '*Termasuk Pajak (Ya / Tidak)',
+      '*Nama Produk',
+      '*Kode Produk (SKU)',
+      'Deskripsi Produk',
+      '*Jumlah Produk',
+      'Satuan Produk',
+      'Diskon Produk',
+      'Diskon Produk (Persen)',
+      '*Harga Produk',
+      'Pajak Produk',
+      'Jumlah Diskon Tambahan',
+      'Jumlah Diskon Tambahan (Persen)',
+      'Biaya Pengiriman',
+      'Kode Akun Uang Muka',
+      'Jumlah Uang Muka',
+      'Jumlah Uang Muka (Persen)',
+      'Tag (Beberapa Tag Dipisah Dengan Koma)'
     ]
   }
 };

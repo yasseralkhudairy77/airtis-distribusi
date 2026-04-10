@@ -44,6 +44,10 @@ function submitSalesOrder(payload) {
     diverifikasi_oleh: '',
     tanggal_verifikasi_cs: '',
     catatan_verifikasi_cs: '',
+    status_export_kledo: 'Belum Siap',
+    tanggal_export_kledo: '',
+    diekspor_oleh: '',
+    catatan_export_kledo: '',
     status_order: approvalDecision.status_order,
     prioritas_kirim: prioritasKirim,
     tanggal_kirim_rencana: payload.tanggal_kirim_rencana,
@@ -411,6 +415,7 @@ function buildSalesOrderClientRow_(order) {
   var details = getSalesOrderDetailsForDisplay_(source);
   var totals = calculateOrderTotals_(details);
   var derivedVerificationStatus = String(source.status_verifikasi_cs || '').trim();
+  var derivedExportStatus = String(source.status_export_kledo || '').trim();
   var finalTotals = details.reduce(function(result, detail) {
     result.subtotal_order += Number(detail.qty_terkirim || 0) * Number(detail.harga_final || 0);
     result.diskon_order += Number(detail.diskon_final || 0);
@@ -437,6 +442,10 @@ function buildSalesOrderClientRow_(order) {
     diskon_final: Number(source.diskon_final || finalTotals.diskon_order || 0),
     total_final: Number(source.total_final || finalTotals.total_order || 0),
     status_verifikasi_cs: derivedVerificationStatus || (normalizeText_(source.status_order) === 'selesai' ? 'Sudah Dicek' : 'Belum Dicek'),
+    status_export_kledo: derivedExportStatus || (normalizeText_(source.status_order) === 'selesai' ? 'Siap Export' : 'Belum Siap'),
+    tanggal_export_kledo: source.tanggal_export_kledo || '',
+    diekspor_oleh: source.diekspor_oleh || '',
+    catatan_export_kledo: source.catatan_export_kledo || '',
     diverifikasi_oleh: source.diverifikasi_oleh || '',
     tanggal_verifikasi_cs: source.tanggal_verifikasi_cs || '',
     catatan_verifikasi_cs: source.catatan_verifikasi_cs || ''

@@ -205,6 +205,7 @@ function verifyDeliveredOrder(noSo, userId, payload) {
 
 function completeOrder(noSo, userId, catatanKirim) {
   var salesOrder = findSalesOrderByNoSo_(noSo);
+  var result;
 
   if (!salesOrder) {
     throw new Error('Sales order tidak ditemukan untuk no_so: ' + noSo);
@@ -214,7 +215,155 @@ function completeOrder(noSo, userId, catatanKirim) {
     throw new Error('Order belum bisa selesai. CS wajib simpan verifikasi qty dan nominal final terlebih dahulu.');
   }
 
-  return updateDeliveryOrderStatus_(noSo, userId, 'Selesai', 'Selesai', catatanKirim);
+  result = updateDeliveryOrderStatus_(noSo, userId, 'Selesai', 'Selesai', catatanKirim);
+
+  updateRowByKey_(APP_CONFIG.SHEETS.SALES_ORDER, 'no_so', noSo, {
+    status_export_kledo: 'Siap Export'
+  });
+
+  result.status_export_kledo = 'Siap Export';
+  return result;
+}
+
+function generateKledoExportFile(noSo, currentUser) {
+  var salesOrder = buildSalesOrderClientRow_(findSalesOrderByNoSo_(noSo) || {});
+  var suratJalan = findSuratJalanByNoSo_(noSo) || {};
+  var exportRows;
+  var csvLines;
+  var fileName;
+
+  if (!salesOrder.no_so) {
+    throw new Error('Sales order tidak ditemukan untuk no_so: ' + noSo);
+  }
+
+  if (normalizeText_(salesOrder.status_order) !== 'selesai') {
+    throw new Error('Export Kledo hanya bisa dibuat untuk order yang sudah Selesai.');
+  }
+
+  if (String(salesOrder.status_verifikasi_cs || '').trim() !== 'Sudah Dicek') {
+    throw new Error('Order belum diverifikasi CS. Export Kledo belum bisa dibuat.');
+  }
+
+  exportRows = buildKledoExportRows_(salesOrder, suratJalan);
+  csvLines = [APP_CONFIG.KLEDO_EXPORT.HEADERS].concat(exportRows).map(function(row) {
+    return row.map(escapeCsvCell_).join(',');
+  });
+  fileName = [
+    APP_CONFIG.KLEDO_EXPORT.FILE_PREFIX,
+    String(salesOrder.no_so || '').replace(/[^A-Za-z0-9_-]/g, '_'),
+    Utilities.formatDate(new Date(), APP_CONFIG.TIMEZONE, 'yyyyMMdd-HHmmss')
+  ].join('-') + '.csv';
+
+  return {
+    success: true,
+    no_so: salesOrder.no_so,
+    file_name: fileName,
+    csv_content: csvLines.join('\r\n')
+  };
+}
+
+function markKledoOrderExported(noSo, currentUser, catatanExport) {
+  var salesOrder = findSalesOrderByNoSo_(noSo);
+  var now = getNowParts_();
+
+  if (!salesOrder) {
+    throw new Error('Sales order tidak ditemukan untuk no_so: ' + noSo);
+  }
+
+  if (String(salesOrder.status_export_kledo || '').trim() !== 'Siap Export') {
+    throw new Error('Order belum berada pada status Siap Export.');
+  }
+
+  updateRowByKey_(APP_CONFIG.SHEETS.SALES_ORDER, 'no_so', noSo, {
+    status_export_kledo: 'Sudah Export',
+    tanggal_export_kledo: now.tanggal + ' ' + now.jam,
+    diekspor_oleh: currentUser.user_id || '',
+    catatan_export_kledo: String(catatanExport || '').trim()
+  });
+
+  return {
+    success: true,
+    no_so: noSo,
+    status_export_kledo: 'Sudah Export'
+  };
+}
+
+function buildKledoExportRows_(salesOrder, suratJalan) {
+  var details = Array.isArray(salesOrder.details) ? salesOrder.details : [];
+
+  if (!details.length) {
+    throw new Error('Detail item order tidak ditemukan untuk export Kledo.');
+  }
+
+  return details.map(function(detail) {
+    var qty = Number(detail.qty_terkirim || detail.qty || 0);
+    var harga = Number(detail.harga_final || detail.harga || 0);
+    var diskon = Number(detail.diskon_final || detail.diskon || 0);
+
+    return [
+      salesOrder.nama_customer_input || '',
+      '',
+      salesOrder.alamat_kirim || '',
+      salesOrder.no_hp_customer || '',
+      '',
+      salesOrder.no_so || '',
+      '',
+      formatKledoDate_(salesOrder.tanggal_order || ''),
+      formatKledoDate_(salesOrder.tanggal_jatuh_tempo || ''),
+      APP_CONFIG.KLEDO_EXPORT.WAREHOUSE_NAME,
+      buildKledoOrderNote_(salesOrder),
+      formatKledoDate_(suratJalan.tanggal_kirim || salesOrder.tanggal_kirim_rencana || ''),
+      suratJalan.armada || '',
+      '',
+      APP_CONFIG.KLEDO_EXPORT.INCLUDE_TAX,
+      detail.nama_item || '',
+      detail.kode_item || '',
+      '',
+      qty > 0 ? String(qty) : '0',
+      detail.satuan || '',
+      String(diskon || 0),
+      '',
+      String(harga || 0),
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      'Webapp ATS'
+    ];
+  });
+}
+
+function buildKledoOrderNote_(salesOrder) {
+  var notes = [];
+
+  if (salesOrder.catatan) {
+    notes.push('Order: ' + salesOrder.catatan);
+  }
+
+  if (salesOrder.catatan_verifikasi_cs) {
+    notes.push('Verifikasi CS: ' + salesOrder.catatan_verifikasi_cs);
+  }
+
+  return notes.join(' | ');
+}
+
+function formatKledoDate_(value) {
+  var normalized = normalizeSheetDateToYmd_(value);
+  var match = String(normalized || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+  if (!match) {
+    return '';
+  }
+
+  return [match[3], match[2], match[1]].join('/');
+}
+
+function escapeCsvCell_(value) {
+  var text = String(value === undefined || value === null ? '' : value);
+  return '"' + text.replace(/"/g, '""') + '"';
 }
 
 function testCreateSuratJalanFromLatestReadyOrder() {

@@ -65,15 +65,48 @@ function getSalesOrderFormData(userId) {
 
 function getApproverDashboardData(userId) {
   requireCurrentUserRole_(['Approver'], userId);
+  backfillCompletedOrdersVerification_();
   var currentUser = getCurrentUserProfile(userId);
   var approvals = getSheetData_(APP_CONFIG.SHEETS.APPROVAL_ORDER).filter(function(row) {
     return normalizeText_(row.status_approval) === 'menunggu';
+  });
+  var exportOrders = getSheetData_(APP_CONFIG.SHEETS.SALES_ORDER).filter(function(row) {
+    var statusOrder = normalizeText_(row.status_order);
+    var verificationStatus = String(row.status_verifikasi_cs || '').trim();
+    var exportStatus = String(row.status_export_kledo || '').trim();
+
+    return statusOrder === 'selesai' &&
+      verificationStatus === 'Sudah Dicek' &&
+      exportStatus !== 'Sudah Export';
+  }).map(function(orderRow) {
+    var order = buildSalesOrderClientRow_(orderRow || {});
+    var suratJalan = findSuratJalanByNoSo_(order.no_so) || {};
+
+    return {
+      no_so: order.no_so || '',
+      customer: order.nama_customer_input || '',
+      alamat_kirim: order.alamat_kirim || '',
+      no_hp_customer: order.no_hp_customer || '',
+      sales_nama: order.sales_nama || '',
+      tanggal_order: order.tanggal_order || '',
+      tanggal_jatuh_tempo: order.tanggal_jatuh_tempo || '',
+      tanggal_kirim: suratJalan.tanggal_kirim || order.tanggal_kirim_rencana || '',
+      term_pembayaran: order.term_pembayaran || '',
+      item: order.item_summary || order.item || '',
+      qty: order.qty_summary || order.qty || '',
+      details: order.details || [],
+      total_final: order.total_final || order.total || 0,
+      status_export_kledo: order.status_export_kledo || 'Siap Export',
+      catatan_order: order.catatan || '',
+      catatan_verifikasi_cs: order.catatan_verifikasi_cs || ''
+    };
   });
 
   return toClientValue_({
     currentUser: currentUser,
     approvers: [currentUser],
     products: getProductCatalog_(),
+    exportOrders: exportOrders,
     approvals: approvals.map(function(approval) {
       var order = buildSalesOrderClientRow_(findSalesOrderByNoSo_(approval.no_so) || {});
       var customer = findCustomerByCode_(order.customer_id);
@@ -111,15 +144,27 @@ function backfillCompletedOrdersVerification_() {
     var noSo = String(order.no_so || '').trim();
     var statusOrder = normalizeText_(order.status_order);
     var statusVerifikasi = String(order.status_verifikasi_cs || '').trim();
+    var statusExport = String(order.status_export_kledo || '').trim();
+    var updates = {};
 
-    if (!noSo || statusOrder !== 'selesai' || statusVerifikasi) {
+    if (!noSo || statusOrder !== 'selesai') {
       return;
     }
 
-    updateRowByKey_(APP_CONFIG.SHEETS.SALES_ORDER, 'no_so', noSo, {
-      status_verifikasi_cs: 'Sudah Dicek',
-      catatan_verifikasi_cs: 'Backfill otomatis untuk order selesai sebelum verifikasi CS diwajibkan.'
-    });
+    if (!statusVerifikasi) {
+      updates.status_verifikasi_cs = 'Sudah Dicek';
+      updates.catatan_verifikasi_cs = 'Backfill otomatis untuk order selesai sebelum verifikasi CS diwajibkan.';
+    }
+
+    if (!statusExport) {
+      updates.status_export_kledo = 'Siap Export';
+    }
+
+    if (!Object.keys(updates).length) {
+      return;
+    }
+
+    updateRowByKey_(APP_CONFIG.SHEETS.SALES_ORDER, 'no_so', noSo, updates);
   });
 }
 
@@ -270,6 +315,16 @@ function verifyDeliveredOrderFromDashboard(userId, formData) {
     items: Array.isArray(formData.items) ? formData.items : [],
     catatan_verifikasi_cs: formData.catatan_verifikasi_cs || ''
   });
+}
+
+function generateKledoExportFromDashboard(userId, formData) {
+  var currentUser = requireCurrentUserRole_(['Approver'], userId);
+  return toClientValue_(generateKledoExportFile(formData.no_so, currentUser));
+}
+
+function markKledoExportedFromDashboard(userId, formData) {
+  var currentUser = requireCurrentUserRole_(['Approver'], userId);
+  return toClientValue_(markKledoOrderExported(formData.no_so, currentUser, formData.catatan_export_kledo || ''));
 }
 
 function completeOrderFromDashboard(userId, formData) {
